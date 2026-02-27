@@ -615,11 +615,46 @@ function GlowCursor() {
 /* ══════════════════════════════════════════════
    PAGE PRINCIPALE — DemandeStage
 ══════════════════════════════════════════════ */
+const DOMAIN_KEYWORDS = {
+  tech: ['informatique', 'developpement', 'numerique', 'tech', 'digital'],
+  finance: ['finance', 'comptabilite', 'banque'],
+  sante: ['sante', 'medical', 'soin'],
+  droit: ['droit', 'juridique', 'notaire'],
+  marketing: ['marketing', 'communication', 'pub'],
+  industrie: ['industrie', 'ingenierie', 'btp', 'construction'],
+};
+
+const stripAccents = (value = '') =>
+  value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+function matchStatus(sector, statuses = []) {
+  if (!statuses.length) return true;
+  const remaining = sector.remaining ?? 0;
+
+  return statuses.some((status) => {
+    if (status === 'disponible') return remaining > 0;
+    if (status === 'urgent') return remaining > 0 && remaining <= 3;
+    if (status === 'complet') return remaining <= 0;
+    return false;
+  });
+}
+
+function matchDomain(sector, domains = []) {
+  if (!domains.length) return true;
+  const haystack = stripAccents(sector.name ?? '');
+
+  return domains.some((domain) => {
+    const keywords = DOMAIN_KEYWORDS[domain] ?? [];
+    return keywords.some((keyword) => haystack.includes(keyword));
+  });
+}
+
 export default function DemandeStage() {
   const navigate = useNavigate();
   const { setSectorAndModality } = useApplication();
 
   const [level, setLevel]     = useState('Licence');
+  const [filters, setFilters] = useState({ niveau: ['Licence'], statut: [], domaine: [] });
   const [search, setSearch]   = useState('');
   const [sortBy, setSortBy]   = useState('default');
   const [isLoading, setIsLoading] = useState(true);
@@ -650,8 +685,22 @@ export default function DemandeStage() {
     addToast(v === 'Licence' ? 'Mode binôme activé.' : 'Mode individuel activé.', '🔄');
   };
 
+  const handleFiltersChange = useCallback((next) => {
+    setFilters(next);
+    const nextLevel = next?.niveau?.[0];
+    if (nextLevel && nextLevel !== level) {
+      setLevel(nextLevel);
+    }
+  }, [level]);
+
   const sectors = SECTORS
-    .filter((s) => !search || s.name?.toLowerCase().includes(search.toLowerCase()) || s.description?.toLowerCase().includes(search.toLowerCase()))
+    .filter((s) =>
+      !search
+      || stripAccents(s.name ?? '').includes(stripAccents(search))
+      || stripAccents(s.description ?? '').includes(stripAccents(search))
+    )
+    .filter((s) => matchStatus(s, filters.statut))
+    .filter((s) => matchDomain(s, filters.domaine))
     .sort((a, b) => {
       if (sortBy === 'places') return (b.remaining ?? 0) - (a.remaining ?? 0);
       if (sortBy === 'alpha')  return (a.name ?? '').localeCompare(b.name ?? '');
@@ -734,7 +783,13 @@ export default function DemandeStage() {
                             px-3.5 py-2.5
                             shadow-[0_2px_14px_rgba(0,0,0,0.05)]">
               <div className="flex-1 min-w-0">
-                <Filters level={level} onLevelChange={handleLevel} />
+                <Filters
+                  level={level}
+                  onLevelChange={handleLevel}
+                  onFiltersChange={handleFiltersChange}
+                  resultCount={sectors.length}
+                  totalCount={SECTORS.length}
+                />
               </div>
 
               <div className="hidden sm:block self-stretch w-px bg-zinc-100 my-1" />

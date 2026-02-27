@@ -231,12 +231,12 @@ function Field({ label, name, type='text', value, onChange, error, required, hin
 }
 
 /* ── FileZone ── */
-function FileZone({ file, onChange, error }) {
+function FileZone({ file, onChange, error, label = 'CV / Document' }) {
   const [drag, setDrag] = useState(false);
   return (
     <div>
       <p style={{fontSize:11,fontWeight:600,letterSpacing:'.14em',textTransform:'uppercase',color:'var(--muted)',marginBottom:8,fontFamily:"'DM Sans',system-ui"}}>
-        CV / Document <span style={{color:'var(--danger)'}}>*</span>
+        {label} <span style={{color:'var(--danger)'}}>*</span>
       </p>
       <div className={`dz ${drag?'drag':''}`}
         onDragOver={e=>{e.preventDefault();setDrag(true)}}
@@ -333,9 +333,8 @@ export default function Form() {
     filiere: student1?.filiere ?? '',
     nomBinome: student2?.nom ?? '',
     prenomBinome: student2?.prenom ?? '',
-    motivation:'',
   });
-  const [file, setFile]       = useState(null);
+  const [files, setFiles]     = useState({ primary: null, partner: null });
   const [errors, setErrors]   = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -344,12 +343,25 @@ export default function Form() {
   const req = ['nom','prenom','email','telephone','niveau','secteur','universite','filiere'];
   if (isBinome) req.push('nomBinome','prenomBinome');
   const filled = req.filter(f => String(values[f]??'').trim().length > 0).length;
-  const pct    = Math.round(((filled + (file?1:0)) / (req.length+1)) * 100);
+  const requiredFileCount = isBinome ? 2 : 1;
+  const currentFileCount  = [files.primary, files.partner].filter(Boolean).length;
+  const pct = Math.round(((filled + Math.min(currentFileCount, requiredFileCount)) / (req.length + requiredFileCount)) * 100);
 
   const handle = e => {
     const {name,value} = e.target;
     setValues(p => ({...p,[name]:value}));
     if (errors[name]) setErrors(p => {const n={...p}; delete n[name]; return n;});
+  };
+  const handleFileChange = (key, nextFile) => {
+    setFiles((prev) => ({ ...prev, [key]: nextFile }));
+    const errKey = key === 'primary' ? 'filePrimary' : 'filePartner';
+    if (errors[errKey]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[errKey];
+        return next;
+      });
+    }
   };
 
   const validate = () => {
@@ -366,7 +378,8 @@ export default function Form() {
       if (!values.nomBinome.trim())    e.nomBinome    = 'Nom du binôme requis.';
       if (!values.prenomBinome.trim()) e.prenomBinome = 'Prénom requis.';
     }
-    if (!file) e.file = 'Veuillez joindre votre CV.';
+    if (!files.primary) e.filePrimary = 'Veuillez joindre votre CV.';
+    if (isBinome && !files.partner) e.filePartner = 'Veuillez joindre le CV du binôme.';
     return e;
   };
 
@@ -401,8 +414,11 @@ export default function Form() {
           }
         : { nom: '', prenom: '', email: '', telephone: '', universite: '', filiere: '', niveau: '' }
     );
-    setCvFile(file);
-    setCvValid(Boolean(file));
+    const cvPayload = isBinome
+      ? { student1: files.primary, student2: files.partner }
+      : files.primary;
+    setCvFile(cvPayload);
+    setCvValid(isBinome ? Boolean(files.primary && files.partner) : Boolean(files.primary));
     setLoading(false);
     navigate('/recapitulatif');
   };
@@ -429,6 +445,30 @@ export default function Form() {
         background:'#F3F3F2', fontFamily:"'DM Sans',system-ui,sans-serif",
       }}>
         <main style={{flex:1, position:'relative', zIndex:10, padding:'clamp(20px, 4vw, 48px) clamp(14px, 4vw, 24px) clamp(48px, 8vw, 72px)'}}>
+          <div style={{maxWidth:680, margin:'0 auto 14px'}}>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              style={{
+                display:'inline-flex',
+                alignItems:'center',
+                gap:8,
+                fontSize:12,
+                fontWeight:600,
+                color:'#71717A',
+                background:'transparent',
+                border:'none',
+                cursor:'pointer',
+                fontFamily:"'DM Sans',system-ui",
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+              </svg>
+              Retour
+            </button>
+          </div>
 
           <div className="fu" style={{
             maxWidth:680, margin:'0 auto',
@@ -529,11 +569,31 @@ export default function Form() {
 
                 <Section label="Documents" />
 
-                <FileZone file={file} onChange={setFile} error={errors.file} />
-
-                <Field label="Lettre de motivation (facultatif)" name="motivation" type="textarea"
-                  value={values.motivation} onChange={handle}
-                  hint="Décrivez brièvement vos motivations pour ce stage." />
+                {isBinome ? (
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:14}}>
+                    <FileZone
+                      label="CV étudiant 1"
+                      file={files.primary}
+                      onChange={(next) => handleFileChange('primary', next)}
+                      error={errors.filePrimary}
+                    />
+                    <FileZone
+                      label="CV étudiant 2 (binôme)"
+                      file={files.partner}
+                      onChange={(next) => handleFileChange('partner', next)}
+                      error={errors.filePartner}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <FileZone
+                      label="CV"
+                      file={files.primary}
+                      onChange={(next) => handleFileChange('primary', next)}
+                      error={errors.filePrimary}
+                    />
+                  </>
+                )}
 
                 {errCount > 0 && (
                   <div style={{

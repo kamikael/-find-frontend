@@ -38,7 +38,7 @@ const STYLES = `
 const NAV_LINKS = [
   { label: 'Accueil', to: '/' },
   { label: 'A propos', to: '/#about' },
-  { label: 'Contacts', to: '/#contacts' },
+  { label: 'Contact', to: '/contact' },
 ];
 
 export default function Navbar() {

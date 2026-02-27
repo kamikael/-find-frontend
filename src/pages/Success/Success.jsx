@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useApplication } from '../../context/ApplicationContext';
 import Navbar from '../../components/Navbar/Navbar';
 
@@ -99,6 +99,7 @@ const CONFETTI = [
  * Page confirmation : message ✅ Paiement confirmé, texte de succès, bouton Retour à l'accueil.
  */
 export default function Success() {
+  const navigate = useNavigate();
   const { resetApplication } = useApplication();
 
   return (
@@ -112,7 +113,23 @@ export default function Success() {
         <Navbar />
         
 
-        <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-10 sm:py-16 relative z-10 w-full">
+        <main className="flex-1 px-4 sm:px-6 py-10 sm:py-16 relative z-10 w-full">
+          <div className="w-full max-w-md mx-auto">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="mb-4 inline-flex items-center gap-2 text-xs font-semibold text-zinc-500 hover:text-zinc-900 transition-colors"
+              style={{ fontFamily: 'var(--font-ui)' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+              Retour
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center w-full">
           {/* Card */}
           <div
             className="pop-in relative z-10 bg-white border border-zinc-100 rounded-3xl
@@ -255,6 +272,7 @@ export default function Success() {
                 Retour à l'accueil
               </Link>
             </div>
+          </div>
           </div>
         </main>
       </div>

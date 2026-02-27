@@ -5,6 +5,7 @@ import DemandeStage from './pages/DemandeStage/DemandeStage';
 import Formulaire from './pages/Formulaire/Formulaire';
 import Recapitulatif from './pages/Recapitulatif/Recapitulatif';
 import Success from './pages/Success/Success';
+import Contact from './pages/Contact/Contact';
 import ScrollToTop from './components/ScrollToTop';
 
 /**
@@ -22,6 +23,7 @@ function App() {
           <Route path="/formulaire" element={<Formulaire />} />
           <Route path="/recapitulatif" element={<Recapitulatif />} />
           <Route path="/success" element={<Success />} />
+          <Route path="/contact" element={<Contact />} />
         </Routes>
       </BrowserRouter>
     </ApplicationProvider>

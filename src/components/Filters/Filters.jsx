@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 /* ══════════════════════════════════════════════
    STYLES
@@ -179,8 +179,8 @@ function DropdownGroup({ group, selected, onToggle, onClose }) {
               key={opt.value}
               type="button"
               onClick={() => { onToggle(opt.value); if (group.single) onClose(); }}
-              className="dropdown-item w-full flex items-center justify-between
-                         px-4 py-2.5 text-left text-sm font-medium text-zinc-600"
+              className={`dropdown-item ${isSelected ? 'selected' : ''} w-full flex items-center justify-between
+                         px-4 py-2.5 text-left text-sm font-medium text-zinc-600`}
               style={{ fontFamily: 'var(--font-sans)' }}
             >
               <span className="flex items-center gap-2.5">
@@ -189,7 +189,13 @@ function DropdownGroup({ group, selected, onToggle, onClose }) {
                   className="w-4 h-4 rounded-md border-2 flex items-center
                              justify-center shrink-0 border-zinc-300 bg-white"
                 >
-
+                  {isSelected && (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                      className="text-zinc-700">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  )}
                 </span>
                 {opt.label}
               </span>
@@ -222,11 +228,23 @@ export default function Filters({
   });
   const [openGroup, setOpenGroup] = useState(null);
 
+  useEffect(() => {
+    setActiveFilters((prev) => {
+      const nextLevel = level ? [level] : [];
+      if ((prev.niveau ?? [])[0] === nextLevel[0]) return prev;
+      return { ...prev, niveau: nextLevel };
+    });
+  }, [level]);
+
   /* Sync level prop → internal state */
   const syncLevel = useCallback((val) => {
-    setActiveFilters((prev) => ({ ...prev, niveau: [val] }));
+    setActiveFilters((prev) => {
+      const next = { ...prev, niveau: [val] };
+      onFiltersChange?.(next);
+      return next;
+    });
     onLevelChange?.(val);
-  }, [onLevelChange]);
+  }, [onLevelChange, onFiltersChange]);
 
   const toggleFilter = (groupKey, value) => {
     const group = FILTER_GROUPS.find((g) => g.key === groupKey);
