@@ -106,7 +106,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center justify-end">
             <Link
               to="/demande-stage"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-zinc-950 bg-zinc-950 text-white text-[13px] font-bold tracking-wide"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-zinc-950 bg-zinc-950 text-white text-[12px] font-bold tracking-wide"
               style={{ fontFamily: 'var(--font-ui)', color: '#ffffff' }}
             >
               Postuler

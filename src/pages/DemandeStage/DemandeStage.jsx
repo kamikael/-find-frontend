@@ -468,19 +468,13 @@ function Stepper({ step }) {
         return (
           <div key={id} className="flex items-center">
             <div className="flex flex-col items-center gap-1.5">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all duration-400
-                ${done    ? 'step-done'
-                : current ? 'border-indigo-500 bg-white text-indigo-600 ring-4 ring-indigo-50'
-                : 'bg-white border-zinc-200 text-zinc-300'}`}
-                style={done ? {} : current ? { borderColor: C.indigo, color: C.indigo } : {}}>
-                {done ? (
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                ) : id}
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all duration-400 bg-white"
+                style={{ borderColor: C.indigo, color: C.indigo }}
+              >
+                {id}
               </div>
-              <span className={`text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-center w-[78px] sm:w-auto whitespace-normal sm:whitespace-nowrap
-                               ${id <= step ? 'text-zinc-600' : 'text-zinc-300'}`}>
+              <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-center w-[78px] sm:w-auto whitespace-normal sm:whitespace-nowrap text-zinc-600">
                 {label}
               </span>
             </div>
