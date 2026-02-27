@@ -1,35 +1,32 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ApplicationProvider } from './context/ApplicationContext';
+import Home from './pages/Home/Home';
+import DemandeStage from './pages/DemandeStage/DemandeStage';
+import Formulaire from './pages/Formulaire/Formulaire';
+import Recapitulatif from './pages/Recapitulatif/Recapitulatif';
+import Success from './pages/Success/Success';
+import ScrollToTop from './components/ScrollToTop';
 
+/**
+ * Point d'entrée de l'application #Find.
+ * Routes : Accueil, Demande de stage, Formulaire, Récapitulatif, Success.
+ */
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <ApplicationProvider>
+      <BrowserRouter>
+        <ScrollToTop />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/demande-stage" element={<DemandeStage />} />
+          <Route path="/formulaire" element={<Formulaire />} />
+          <Route path="/recapitulatif" element={<Recapitulatif />} />
+          <Route path="/success" element={<Success />} />
+        </Routes>
+      </BrowserRouter>
+    </ApplicationProvider>
+  );
 }
 
-export default App
+export default App;
+
