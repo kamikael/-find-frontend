@@ -27,9 +27,10 @@ export default function Summary() {
     return null;
   }
 
+  const fullName = (s) => `${s?.prenom ?? ''} ${s?.nom ?? ''}`.trim();
   const names = isPair
-    ? `${student1?.prenom} ${student1?.nom} & ${student2?.prenom} ${student2?.nom}`
-    : `${student1?.prenom} ${student1?.nom}`;
+    ? `${fullName(student1)} & ${fullName(student2)}`.trim()
+    : fullName(student1);
 
   const handlePay = async () => {
     setError(null);

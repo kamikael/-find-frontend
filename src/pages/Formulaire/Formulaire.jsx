@@ -310,14 +310,29 @@ function Progress({ pct }) {
 ══════════════════════════════════════════════ */
 export default function Form() {
   const navigate = useNavigate();
-  const { selectedSector, selectedLevel, setFormData } = useApplication();
+  const {
+    sector,
+    level,
+    setSectorAndModality,
+    student1,
+    student2,
+    setStudent1,
+    setStudent2,
+    setCvFile,
+    setCvValid,
+  } = useApplication();
 
   const [values, setValues] = useState({
-    nom:'', prenom:'', email:'', telephone:'',
-    niveau: selectedLevel ?? '',
-    secteur: selectedSector?.name ?? '',
-    universite:'', filiere:'',
-    nomBinome:'', prenomBinome:'',
+    nom: student1?.nom ?? '',
+    prenom: student1?.prenom ?? '',
+    email: student1?.email ?? '',
+    telephone: student1?.telephone ?? '',
+    niveau: level ?? '',
+    secteur: sector?.name ?? '',
+    universite: student1?.universite ?? '',
+    filiere: student1?.filiere ?? '',
+    nomBinome: student2?.nom ?? '',
+    prenomBinome: student2?.prenom ?? '',
     motivation:'',
   });
   const [file, setFile]       = useState(null);
@@ -361,7 +376,33 @@ export default function Form() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     await new Promise(r => setTimeout(r, 1400));
-    setFormData?.({...values, file});
+    if (sector && values.niveau) {
+      setSectorAndModality(sector, values.niveau);
+    }
+    setStudent1({
+      nom: values.nom.trim(),
+      prenom: values.prenom.trim(),
+      email: values.email.trim(),
+      telephone: values.telephone.trim(),
+      universite: values.universite.trim(),
+      filiere: values.filiere.trim(),
+      niveau: values.niveau,
+    });
+    setStudent2(
+      isBinome
+        ? {
+            nom: values.nomBinome.trim(),
+            prenom: values.prenomBinome.trim(),
+            email: '',
+            telephone: '',
+            universite: '',
+            filiere: '',
+            niveau: values.niveau,
+          }
+        : { nom: '', prenom: '', email: '', telephone: '', universite: '', filiere: '', niveau: '' }
+    );
+    setCvFile(file);
+    setCvValid(Boolean(file));
     setLoading(false);
     navigate('/recapitulatif');
   };
@@ -371,7 +412,7 @@ export default function Form() {
     'Informatique & Développement','Finance & Comptabilité','Santé & Médical',
     'Droit & Juridique','Marketing & Communication','Industrie & BTP',
     'Commerce & Vente','Ressources Humaines',
-    ...(selectedSector ? [selectedSector.name] : []),
+    ...(sector ? [sector.name] : []),
   ].filter((v,i,a) => a.indexOf(v)===i);
 
   const errCount = Object.keys(errors).length;
