@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import logo from '../../assets/images/logo.png';
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Geist:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Geist:wght@300;400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap');
 
   :root {
     --font-sans: 'Geist', system-ui, sans-serif;
@@ -26,6 +26,58 @@ const STYLES = `
   .mobile-drawer.open {
     transform: translateX(0);
     opacity: 1;
+  }
+
+  .premium-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 28px;
+    border-radius: 12px;
+    border: 1.5px solid #111111;
+    background: #111111;
+    color: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    letter-spacing: .02em;
+    line-height: 1;
+    transition: all .3s ease;
+    will-change: transform;
+  }
+  .premium-cta:hover {
+    background: #1a1a1a;
+    color: #ffffff;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(0,0,0,.22);
+  }
+  .premium-cta:active {
+    transform: scale(.98);
+  }
+  .premium-cta .cta-arrow {
+    transition: transform .3s ease;
+  }
+  .premium-cta:hover .cta-arrow {
+    transform: translateX(3px);
+  }
+  .premium-cta.premium-cta-mobile {
+    width: 100%;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .logo-img {
+    width: 150px;
+    height: 46px;
+    object-fit: contain;
+    display: block;
+  }
+
+  @media (min-width: 640px) {
+    .logo-img {
+      width: 170px;
+      height: 52px;
+    }
   }
 
   @keyframes overlayIn {
@@ -87,7 +139,7 @@ export default function Navbar() {
       >
         <div className="w-full max-w-7xl mx-auto h-[72px] md:h-[82px] px-3 sm:px-6 lg:px-8 grid grid-cols-[auto_1fr_auto] items-center gap-3">
           <Link to="/" className="shrink-0" aria-label="Accueil">
-            <img src={logo} alt="#Find" className="w-[78px] h-[46px] sm:w-[86px] sm:h-[50px] object-contain scale-105" />
+            <img src={logo} alt="#Find" className="logo-img" />
           </Link>
 
           <nav className="hidden md:flex items-center justify-center gap-1" aria-label="Navigation principale">
@@ -106,10 +158,14 @@ export default function Navbar() {
           <div className="hidden md:flex items-center justify-end">
             <Link
               to="/demande-stage"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-zinc-950 bg-zinc-950 text-white text-[12px] font-bold tracking-wide"
-              style={{ fontFamily: 'var(--font-ui)', color: '#ffffff' }}
+              className="premium-cta text-[12px]"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Postuler
+              <svg className="cta-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
             </Link>
           </div>
 
@@ -180,10 +236,14 @@ export default function Navbar() {
           <Link
             to="/demande-stage"
             onClick={close}
-            className="mt-2 w-full py-3.5 rounded-xl border-2 border-zinc-950 bg-zinc-950 text-white text-sm font-bold text-center"
-            style={{ fontFamily: 'var(--font-ui)', letterSpacing: '0.08em', color: '#ffffff' }}
+            className="premium-cta premium-cta-mobile mt-2 text-sm"
+            style={{ fontFamily: "'DM Sans', sans-serif" }}
           >
             Postuler
+            <svg className="cta-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
           </Link>
         </div>
       </nav>

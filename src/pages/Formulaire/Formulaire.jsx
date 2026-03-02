@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApplication } from '../../context/ApplicationContext';
 import Navbar from '../../components/Navbar/Navbar';
@@ -106,6 +106,65 @@ const STYLES = `
     top: 8px; transform: translateY(0) scale(.7);
   }
 
+  /* —— Custom select —— */
+  .sel { position: relative; }
+  .sel-btn {
+    width: 100%;
+    padding: 22px 14px 6px 16px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    color: var(--ink);
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color .18s, box-shadow .18s, background .15s;
+  }
+  .sel-btn:hover { border-color: #a1a1aa; }
+  .sel.open .sel-btn {
+    border-color: var(--indigo);
+    box-shadow: 0 0 0 3.5px var(--indigo-ring);
+  }
+  .sel-value {
+    font-size: 14px;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+  .sel-value.placeholder { color: var(--muted); }
+  .sel-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+    overflow: hidden;
+  }
+  .sel-option {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    padding: 10px 14px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 14px;
+    color: #27272a;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .sel-option:hover { background: #f4f4f5; }
+  .sel-option.active {
+    background: #111111;
+    color: #ffffff;
+  }
+
   @keyframes errIn { from{opacity:0;transform:translateY(-3px)} to{opacity:1;transform:translateY(0)} }
   .err-msg {
     animation: errIn .2s ease both;
@@ -183,22 +242,86 @@ function Field({ label, name, type='text', value, onChange, error, required, hin
   const isTxt  = type === 'textarea';
   const hasVal = String(value ?? '').length > 0;
   const cls    = error ? 'err' : hasVal ? 'ok' : '';
+  const [open, setOpen] = useState(false);
+  const selRef = useRef(null);
+
+  const normalizedOptions = (options ?? []).map((o) => ({
+    value: o?.value ?? o,
+    label: o?.label ?? o,
+  }));
+  const selectedOption = normalizedOptions.find((o) => String(o.value) === String(value));
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => {
+      if (!selRef.current?.contains(e.target)) setOpen(false);
+    };
+    const onEsc = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onEsc);
+    };
+  }, [open]);
+
+  const commitSelect = (nextValue) => {
+    onChange?.({ target: { name, value: nextValue } });
+    setOpen(false);
+  };
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
       <div className="fl">
         {isSel && (
           <>
-            <select name={name} value={value} onChange={onChange} required={required}
-              className={`fl-in ${cls}`}>
-              <option value="" disabled />
-              {options?.map(o => <option key={o.value??o} value={o.value??o}>{o.label??o}</option>)}
-            </select>
+            <div ref={selRef} className={`sel ${open ? 'open' : ''}`}>
+              <input type="hidden" name={name} value={value ?? ''} />
+              <button
+                type="button"
+                className={`sel-btn ${cls}`}
+                onClick={() => setOpen((v) => !v)}
+                aria-haspopup="listbox"
+                aria-expanded={open}
+              >
+                <span className={`sel-value ${selectedOption ? '' : 'placeholder'}`}>
+                  {selectedOption?.label ?? 'Selectionner'}
+                </span>
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#a1a1aa"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease' }}
+                >
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+
+              {open && (
+                <div className="sel-menu" role="listbox">
+                  {normalizedOptions.map((opt) => {
+                    const active = String(opt.value) === String(value);
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={`sel-option ${active ? 'active' : ''}`}
+                        onClick={() => commitSelect(opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
             <label className="fl-lb up">{label}{required && <span style={{color:'var(--danger)',marginLeft:2}}>*</span>}</label>
-            <svg style={{position:'absolute',right:14,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}
-              width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="2.5" strokeLinecap="round">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
           </>
         )}
         {isTxt && (

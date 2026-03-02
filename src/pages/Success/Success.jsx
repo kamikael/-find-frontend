@@ -86,13 +86,13 @@ const STYLES = `
 
 /* Confetti dots config */
 const CONFETTI = [
-  { color: '#22c55e', left: '42%', delay: '.1s' },
+  { color: '#6366f1', left: '42%', delay: '.1s' },
   { color: '#0a0a0a', left: '50%', delay: '.18s' },
   { color: '#a1a1aa', left: '56%', delay: '.08s' },
-  { color: '#22c55e', left: '46%', delay: '.22s' },
+  { color: '#6366f1', left: '46%', delay: '.22s' },
   { color: '#0a0a0a', left: '53%', delay: '.05s' },
   { color: '#d4d4d8', left: '60%', delay: '.15s' },
-  { color: '#22c55e', left: '38%', delay: '.25s' },
+  { color: '#6366f1', left: '38%', delay: '.25s' },
 ];
 
 /**
@@ -163,12 +163,12 @@ export default function Success() {
                   className="w-full h-full"
                 >
                   {/* Background circle */}
-                  <circle cx="32" cy="32" r="30" fill="#f0fdf4" />
+                  <circle cx="32" cy="32" r="30" fill="#eef2ff" />
                   {/* Animated border circle */}
                   <circle
                     className="circle-draw"
                     cx="32" cy="32" r="28"
-                    stroke="#22c55e"
+                    stroke="#6366f1"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     transform="rotate(-90 32 32)"
@@ -177,7 +177,7 @@ export default function Success() {
                   <polyline
                     className="check-draw"
                     points="20,33 28,41 44,24"
-                    stroke="#16a34a"
+                    stroke="#4f46e5"
                     strokeWidth="3"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -189,12 +189,12 @@ export default function Success() {
             {/* Status badge */}
             <div className="fade-up d1 flex justify-center mb-6">
               <span
-                className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100
-                           text-emerald-700 rounded-full px-4 py-1.5
+                className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100
+                           text-indigo-700 rounded-full px-4 py-1.5
                            text-[10px] font-bold tracking-[0.18em] uppercase"
                 style={{ fontFamily: 'var(--font-ui)' }}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
                 Paiement confirmé
               </span>
             </div>
@@ -279,3 +279,4 @@ export default function Success() {
     </>
   );
 }
+

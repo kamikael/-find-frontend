@@ -31,7 +31,7 @@ const C = {
    STYLES GLOBAUX
 ══════════════════════════════════════════════ */
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
 
   :root {
     --indigo:      #6366F1;
@@ -142,20 +142,29 @@ const STYLES = `
     border-color: rgba(99,102,241,0.22);
   }
 
-  /* CTA shine */
-  .sc-cta { position:relative; overflow:hidden; transition:background .15s, transform .2s; }
-  .sc-cta::before {
-    content:'';
-    position:absolute; top:0; left:-75%; width:50%; height:100%;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.16),transparent);
-    transform:skewX(-18deg);
-    transition: left 0s;
+  /* Sector CTA - transparent indigo */
+  .sc-cta {
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+    border: 1.5px solid #6366F1;
+    color: #6366F1;
+    border-radius: 18px;
+    padding: 9px 22px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: all .3s ease;
   }
-  .sc-root:not(.sc-full):hover .sc-cta::before {
-    left:135%;
-    transition: left .5s cubic-bezier(.22,1,.36,1);
+  .sc-root:not(.sc-full):hover .sc-cta {
+    background: #6366F1;
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99,102,241,0.25);
   }
-  .sc-cta:active { transform:scale(.985); }
+  .sc-cta:active { transform: scale(.98); }
+  .sc-cta .sc-cta-arrow { transition: transform .3s ease; }
+  .sc-root:not(.sc-full):hover .sc-cta .sc-cta-arrow { transform: translateX(3px); }
 
   /* Separator */
   .sc-divider { height:1px; background:linear-gradient(90deg,transparent,rgba(0,0,0,0.06),transparent); }
@@ -164,14 +173,57 @@ const STYLES = `
   .sc-root:not(.sc-full):hover [data-accent-line] { opacity: 1 !important; }
 
   /* ══ CONTROL BAR ══ */
+  .ctrl-search {
+    transition: border-color .3s ease, box-shadow .3s ease;
+  }
   .ctrl-search:focus {
     outline: none;
-    border-color: var(--indigo) !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    border-color: #111111 !important;
+    box-shadow: inset 0 -2px 0 #111111;
+  }
+
+  .inst-select {
+    background: transparent;
+    border: 1.5px solid #111111;
+    color: #111111;
+    letter-spacing: .02em;
+    transition: all .3s ease;
+  }
+  .inst-select:hover {
+    background: #111111;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+  }
+  .inst-select:focus {
+    outline: none;
+    border-color: #111111 !important;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.14);
+  }
+
+  .certified-btn {
+    background: #6366F1;
+    border: 1px solid #6366F1;
+    color: #ffffff;
+    transition: none;
+  }
+  .certified-btn:hover {
+    background: #6366F1;
+    color: #ffffff;
+    transform: none;
+    box-shadow: none;
   }
 
   /* ══ HERO UNDERLINE — indigo ══ */
   .hero-underline { stroke: var(--indigo); }
+
+  /* ══ FOND ARRIÈRE — ivoire + radial-gradient ══ */
+  .hero-bg {
+    background-color: #faf9f7;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(99,102,241,0.04) 0%, transparent 55%),
+      radial-gradient(circle at 80% 20%, rgba(245,158,11,0.03) 0%, transparent 45%);
+  }
 `;
 
 /* ══════════════════════════════════════════════
@@ -274,39 +326,22 @@ function SectorCard({ sector, level, onApply }) {
       <div className="sc-card flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_14px_rgba(0,0,0,0.04)]">
 
         {/* ── Header teinté ── */}
-        <div className="relative px-5 pt-5 pb-4 flex items-start justify-between gap-3"
+        <div className="relative px-5 pt-5 pb-4"
           style={{ background: accent.tint }}>
           <div className="absolute bottom-0 left-0 right-0 h-px bg-zinc-200/70" />
 
-          {/* Icône */}
-          <div className="w-11 h-11 shrink-0 rounded-xl grid place-items-center bg-white
-                          shadow-[0_1px_4px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.05)]
-                          border border-zinc-100/80">
-            {getSectorIcon(sector, accent.hex)}
-          </div>
-
-          {/* Pill statut */}
-          <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 shrink-0 text-[10px] font-semibold uppercase tracking-[0.13em] whitespace-nowrap"
-            style={{ background: status.pill.bg, color: status.pill.color, border: `1px solid ${status.pill.border}` }}>
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dotCls ?? ''}`}
-              style={{ background: status.dot }} />
-            {status.label}
-          </div>
+          <h2 className="text-[1rem] font-semibold text-zinc-900 leading-snug tracking-[-0.01em] whitespace-nowrap overflow-hidden text-ellipsis"
+            style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+            {sector.name}
+          </h2>
         </div>
 
-        {/* ── Body ── */}
+        {/* -- Body -- */}
         <div className="flex flex-col flex-1 px-5 pt-4 pb-5 bg-white">
 
-          {/* Nom */}
-          <div className="mb-4">
-            <h2 className="text-[0.95rem] font-semibold text-zinc-900 leading-snug tracking-[-0.01em]"
-              style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-              {sector.name}
-            </h2>
-            {sector.domain && (
-              <p className="mt-0.5 text-[11px] text-zinc-400 font-medium">{sector.domain}</p>
-            )}
-          </div>
+          {sector.domain && (
+            <p className="mb-4 text-[11px] text-zinc-400 font-medium">{sector.domain}</p>
+          )}
 
           {/* Progress */}
           {fillPct !== null && (
@@ -356,16 +391,11 @@ function SectorCard({ sector, level, onApply }) {
           ) : (
             <button
               onClick={() => onApply(sector)}
-              className="sc-cta w-full rounded-xl py-[13px] text-[13px] font-semibold text-white
-                         flex items-center justify-center gap-2 hover:opacity-90"
-              style={{
-                background: C.black,
-                boxShadow: '0 1px 2px rgba(0,0,0,0.20)',
-              }}
+              className="sc-cta w-full text-[13px] flex items-center justify-center gap-2"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Postuler
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                <svg className="sc-cta-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/>
                   <polyline points="12 5 19 12 12 19"/>
@@ -392,18 +422,26 @@ function Toast({ toasts, remove }) {
       {toasts.map((t) => (
         <div key={t.id}
           className="toast-in pointer-events-auto flex items-center gap-3
-                     pl-4 pr-3 py-3.5 rounded-2xl max-w-full sm:max-w-[310px]
+                     pl-3.5 pr-3 py-3 rounded-2xl max-w-full sm:max-w-[340px]
                      border text-sm font-medium leading-snug"
           style={{
-            background: C.black, color: C.white,
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
+            background: '#ffffff',
+            color: '#111111',
+            border: '1px solid #E5E5E5',
+            boxShadow: '0 10px 26px rgba(0,0,0,0.10)',
             fontFamily: 'DM Sans, system-ui, sans-serif',
           }}>
-          <span className="shrink-0">{t.icon}</span>
+          {t.icon && (
+            <span
+              className="shrink-0 w-7 h-7 rounded-lg grid place-items-center text-[13px]"
+              style={{ background: '#EEF2FF', color: '#4F46E5' }}
+            >
+              {t.icon}
+            </span>
+          )}
           <span className="flex-1">{t.message}</span>
           <button onClick={() => remove(t.id)}
-            className="shrink-0 p-1 rounded-lg opacity-40 hover:opacity-100 hover:bg-white/10 transition-all">
+            className="shrink-0 p-1 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -426,29 +464,28 @@ function SearchBar({ value, onChange }) {
   }, []);
   return (
     <div className="relative group w-full sm:w-auto" style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-      <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-600 transition-colors"
+      <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-700 transition-colors duration-300"
         width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
       <input
         ref={ref} type="text" value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Rechercher…"
-        className="ctrl-search w-full sm:w-44 pl-9 pr-12 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl
-                   text-sm text-zinc-900 placeholder:text-zinc-400
-                   transition-all duration-200"
+        placeholder="Rechercher..."
+        className="ctrl-search w-full sm:w-48 pl-9 pr-12 py-2.5 bg-white border border-[#E5E5E5] rounded-[10px]
+                   text-sm text-zinc-900 placeholder:text-zinc-400"
       />
       {value ? (
         <button onClick={() => onChange('')}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 transition-colors p-0.5">
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 transition-colors duration-300 p-0.5">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
       ) : (
         <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none
-                        text-[9px] text-zinc-300 bg-zinc-100 border border-zinc-200
-                        rounded px-1.5 py-0.5 font-mono select-none">⌘K</kbd>
+                        text-[9px] text-zinc-300 bg-[#FAFAF8] border border-[#E5E5E5]
+                        rounded px-1.5 py-0.5 font-mono select-none">Ctrl+K</kbd>
       )}
     </div>
   );
@@ -514,88 +551,140 @@ function StatsBar({ sectors }) {
   const getR = (s) => s.remaining ?? s.available ?? s.left ?? null;
   const getT = (s) => s.total ?? s.capacity ?? s.spots ?? null;
 
-  const hasData   = sectors.some((s) => getT(s) !== null);
+  const hasData = sectors.some((s) => getT(s) !== null);
   const totPlaces = sectors.reduce((a, s) => a + (getT(s) ?? 0), 0);
-  const totRem    = sectors.reduce((a, s) => a + (getR(s) ?? 0), 0);
-  const pct       = totPlaces > 0 ? Math.round(((totPlaces - totRem) / totPlaces) * 100) : 0;
-  const open      = sectors.filter((s) => { const r = getR(s); return r === null || r > 0; }).length;
+  const totRem = sectors.reduce((a, s) => a + (getR(s) ?? 0), 0);
+  const pct = totPlaces > 0 ? Math.round(((totPlaces - totRem) / totPlaces) * 100) : 0;
+  const open = sectors.filter((s) => { const r = getR(s); return r === null || r > 0; }).length;
 
   const [bar, setBar] = useState(0);
   useEffect(() => {
     if (!hasData) return;
-    const t = setTimeout(() => setBar(pct), 400);
+    const t = setTimeout(() => setBar(pct), 350);
     return () => clearTimeout(t);
   }, [pct, hasData]);
 
-  /* Barre d'occupation : indigo → amber → rouge */
-  const barColor = pct >= 85 ? C.danger : pct >= 55 ? C.amber : C.indigo;
-
   const cells = [
     {
-      key: 'open', always: true, val: open, label: 'Secteurs ouverts',
-      iconBg: C.black, iconStroke: C.white,
-      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>,
+      key: 'open', always: true, val: open, label: 'SECTEURS OUVERTS',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F343A" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      ),
     },
     {
-      key: 'rem', always: false, val: totRem, label: 'Places restantes',
-      iconBg: C.indigoLight,
-      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.indigo} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>,
+      key: 'rem', always: false, val: totRem, label: 'PLACES RESTANTES',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F343A" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      ),
     },
     {
-      key: 'tot', always: false, val: totPlaces, label: 'Places au total',
-      iconBg: '#F4F4F5',
-      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#71717A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-              <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-            </svg>,
+      key: 'tot', always: false, val: totPlaces, label: 'PLACES AU TOTAL',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F343A" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+      ),
     },
   ];
 
   return (
-    <div className="mb-10 rounded-2xl overflow-hidden border border-zinc-100 bg-white
-                    shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
+    <div className="mb-14 rounded-xl overflow-hidden border border-[#E5E5E5] bg-[#FAFAF8] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
       style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-100">
-        {cells.map(({ key, always, val, label, iconBg, icon }) => (
-          <div key={key} className="flex flex-col items-center justify-center gap-1.5 py-5 sm:py-6 px-4">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-0.5"
-              style={{ background: iconBg }}>
-              {icon}
-            </div>
-            <p className="text-[1.6rem] sm:text-[1.8rem] font-black text-zinc-950 leading-none tabular-nums"
-              style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
-              {always || hasData ? <Num value={val} /> : <span className="text-zinc-200 text-2xl">—</span>}
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E5E5E5]">
+        {cells.map(({ key, always, val, label, icon }) => (
+          <div key={key} className="flex flex-col items-center justify-center gap-4 py-10 sm:py-12 px-8 sm:px-10">
+            <div className="text-[#2F343A]">{icon}</div>
+            <p className="relative -top-[1px] text-[48px] font-medium text-[#111111] leading-none text-center"
+              style={{ fontFamily: 'Cormorant Garamond, serif', letterSpacing: '-1px', fontVariantNumeric: 'lining-nums tabular-nums' }}>
+              {always || hasData ? <Num value={val} /> : <span className="text-zinc-300 text-3xl">-</span>}
             </p>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 text-center">{label}</p>
+            <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#6B7280] text-center"
+              style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+              {label}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Barre occupation — couleur dynamique */}
-      <div className="border-t border-zinc-100 px-6 py-3.5">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Taux d'occupation</span>
-          <span className="text-[10px] font-bold tabular-nums" style={{ color: hasData ? barColor : '#D4D4D8' }}>
-            {hasData ? `${pct}%` : '—'}
-          </span>
-        </div>
-        <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-1000 ease-out"
-            style={{ width: `${bar}%`, background: barColor }} />
-        </div>
-      </div>
     </div>
   );
 }
 
-/* ══════════════════════════════════════════════
-   GLOW CURSOR
-══════════════════════════════════════════════ */
+const SORT_OPTIONS = [
+  { value: 'default', label: 'Par defaut' },
+  { value: 'places', label: 'Plus de places' },
+  { value: 'alpha', label: 'Alphabetique' },
+];
+
+function SortMenu({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const current = SORT_OPTIONS.find((opt) => opt.value === value) ?? SORT_OPTIONS[0];
+
+  const selectValue = (next) => {
+    onChange(next);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative shrink-0 w-full sm:w-auto" style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="inst-select w-full sm:w-[190px] flex items-center justify-between gap-2 px-4 py-2.5 rounded-[10px]
+                   text-sm font-medium"
+      >
+        <span>{current.label}</span>
+        <svg
+          width="11"
+          height="11"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 mt-2 z-50 w-full sm:w-[220px] bg-white border border-[#E5E5E5] rounded-[10px]
+                          shadow-[0_10px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#E5E5E5]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">TRI</p>
+            </div>
+            <div className="py-1">
+              {SORT_OPTIONS.map((opt) => {
+                const active = value === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => selectValue(opt.value)}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-300 ${
+                      active ? 'bg-[#F5F5F2] text-[#111111] font-medium' : 'text-zinc-700 hover:bg-[#F8F8F6]'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 function GlowCursor() {
   const r = useRef(null);
   useEffect(() => {
@@ -677,7 +766,7 @@ export default function DemandeStage() {
   const handleApply = (sector) => {
     if ((sector.remaining ?? 0) <= 0) { addToast('Ce secteur est complet.', '⚠️'); return; }
     setSectorAndModality(sector, level);
-    addToast(`Candidature "${sector.name}" démarrée.`, '🚀');
+    addToast(`Candidature "${sector.name}" démarrée.`, '');
     setTimeout(() => navigate('/formulaire'), 550);
   };
   const handleLevel = (v) => {
@@ -719,7 +808,7 @@ export default function DemandeStage() {
         <main className="flex-1 relative z-10">
 
           {/* ══ HERO ══ */}
-          <div className="bg-white border-b border-zinc-100 pt-10 sm:pt-14 pb-10 sm:pb-12 px-4 sm:px-6">
+          <div className="hero-bg border-b border-zinc-100 pt-10 sm:pt-14 pb-10 sm:pb-12 px-4 sm:px-6">
             <div className="max-w-[1120px] mx-auto space-y-6 sm:space-y-8">
 
               {/* Live pill — indigo */}
@@ -742,13 +831,8 @@ export default function DemandeStage() {
                 <h1 className="text-[clamp(2.4rem,5.5vw,4.2rem)] font-black tracking-tight leading-[1.05] text-zinc-950 mb-4"
                   style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
                   Trouvez votre{' '}
-                  <em className="not-italic relative inline-block">
+                  <em className="not-italic inline-block">
                     Opportunité
-                    <svg className="absolute -bottom-1 left-0 w-full overflow-visible"
-                      height="6" viewBox="0 0 200 6" preserveAspectRatio="none" fill="none">
-                      <path d="M1 4.5 Q50 1 100 4 Q150 7 199 3"
-                        stroke={C.indigo} strokeWidth="2.5" strokeLinecap="round"/>
-                    </svg>
                   </em>
                 </h1>
                 <p className="text-zinc-400 text-[1.02rem] max-w-md mx-auto leading-relaxed font-normal">
@@ -777,11 +861,11 @@ export default function DemandeStage() {
             {!isLoading && <StatsBar sectors={SECTORS} />}
 
             {/* ── Barre de contrôle sticky ── */}
-            <div className="hero-in d4 sticky top-2 sm:top-3 z-30 mb-8 sm:mb-10
-                            flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center
-                            bg-white/96 backdrop-blur-2xl border border-zinc-200 rounded-2xl
-                            px-3.5 py-2.5
-                            shadow-[0_2px_14px_rgba(0,0,0,0.05)]">
+            <div className="hero-in d4 sticky top-2 sm:top-3 z-30 mb-10 sm:mb-12
+                            flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center
+                            bg-[#FAFAF8]/95 backdrop-blur-xl border border-[#E5E5E5] rounded-xl
+                            px-4 sm:px-5 py-3.5
+                            shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
               <div className="flex-1 min-w-0">
                 <Filters
                   level={level}
@@ -792,38 +876,26 @@ export default function DemandeStage() {
                 />
               </div>
 
-              <div className="hidden sm:block self-stretch w-px bg-zinc-100 my-1" />
+              <div className="hidden sm:block self-stretch w-px bg-[#E5E5E5] my-1" />
 
               <SearchBar value={search} onChange={setSearch} />
 
-              {/* Select tri */}
-              <div className="relative shrink-0 w-full sm:w-auto">
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full sm:w-auto pl-3.5 pr-8 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl
-                             text-sm text-zinc-600 font-medium focus:outline-none
-                             hover:bg-zinc-100 transition-colors cursor-pointer"
-                  style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-                  <option value="default">Par défaut</option>
-                  <option value="places">Plus de places</option>
-                  <option value="alpha">Alphabétique</option>
-                </select>
-                <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400"
-                  width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </div>
+              <SortMenu value={sortBy} onChange={setSortBy} />
 
-              {/* Badge certifié — indigo */}
-              <div className="hidden lg:flex shrink-0 items-center gap-1.5 px-3.5 py-2.5 rounded-xl
-                              text-[11px] font-semibold tracking-wide"
-                style={{ background: C.indigo, color: C.white }}>
+
+                            {/* Bouton certifie institutionnel */}
+              <button
+                type="button"
+                className="certified-btn hidden lg:flex shrink-0 items-center gap-1.5 px-4 py-2.5 rounded-[10px]
+                              text-[11px] font-semibold tracking-[0.04em]"
+                style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                   <circle cx="8.5" cy="7" r="4"/>
                   <polyline points="17 11 19 13 23 9"/>
                 </svg>
-                Places certifiées
-              </div>
+                Places certifiees
+              </button>
             </div>
 
             {/* Compteur */}
@@ -861,7 +933,7 @@ export default function DemandeStage() {
                   </div>
                 ))}
               </div>
-            )}
+            )}    
 
             {/* État vide */}
             {!isLoading && sectors.length === 0 && (
@@ -896,3 +968,14 @@ export default function DemandeStage() {
     </>
   );
 }
+
+
+
+
+
+
+
+
+
+
+

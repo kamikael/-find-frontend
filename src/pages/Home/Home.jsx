@@ -170,7 +170,7 @@ export default function Home() {
                            text-[10px] sm:text-[11px] font-bold tracking-[0.16em] sm:tracking-[0.2em] uppercase text-white/80"
                 style={{ fontFamily: 'var(--font-ui)' }}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0" />
                 Promo 2026 · Inscriptions ouvertes
               </span>
             </div>
@@ -226,7 +226,7 @@ export default function Home() {
 
             {/* Scroll indicator */}
             <div className="hero-anim d4 flex justify-center mt-16">
-              <div className="flex flex-col items-center gap-2 text-white/40">
+              <div className="flex flex-col items-center gap-2 text-indigo-200">
                 <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-ui)' }}>
                   Défiler
                 </span>
