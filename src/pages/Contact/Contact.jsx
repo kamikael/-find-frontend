@@ -1,68 +1,82 @@
 import { useState } from 'react';
+import emailjs from '@emailjs/browser';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
+import { EMAILJS_CONFIG, isEmailJsConfigured } from '../../config/emailjs';
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Fraunces:wght@600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
 
   :root {
-    --font-body: 'DM Sans', system-ui, sans-serif;
-    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-display: 'Poppins', system-ui, sans-serif;
+    --accent: #2563eb;
   }
 
   * { box-sizing: border-box; }
 
   .contact-page {
-    background-color: #fafafa;
-    background-image: radial-gradient(circle at 1px 1px, #e5e7eb 1px, transparent 0);
-    background-size: 28px 28px;
+    background-color: #ffffff;
   }
 
   .field-input {
-    transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+    transition: border-color .22s ease, box-shadow .22s ease, background-color .22s ease, transform .18s ease;
     font-family: var(--font-body);
+  }
+  .field-input:hover {
+    border-color: #cbd5e1;
+    background-color: #ffffff;
   }
   .field-input:focus {
     outline: none;
-    border-color: #111827;
+    border-color: var(--accent);
     background-color: #ffffff;
-    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12), 0 8px 18px rgba(15, 23, 42, 0.06);
   }
   .field-input.valid {
-    border-color: #16a34a;
-    background-color: #f0fdf4;
+    border-color: #2563eb;
+    background-color: #eff6ff;
   }
   .field-input.invalid {
     border-color: #dc2626;
     background-color: #fef2f2;
   }
   .field-input.valid:focus {
-    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
   }
   .field-input.invalid:focus {
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
   }
 
   .send-btn {
-    background: #111827;
+    background: #0f172a;
     color: white;
-    transition: background .2s ease, transform .15s ease, box-shadow .2s ease;
+    border: 1px solid #0f172a;
+    transition: background .25s ease, transform .2s ease, box-shadow .25s ease, border-color .25s ease;
   }
   .send-btn:hover {
-    background: #000000;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
-    transform: translateY(-1px);
+    background: #111827;
+    border-color: #1e293b;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.22);
+    transform: translateY(-2px);
   }
   .send-btn:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
+  }
+  .send-btn:disabled {
+    opacity: .68;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
   }
 
   .info-icon {
     transition: background .2s, transform .2s;
   }
   .info-item:hover .info-icon {
-    background: #111827;
-    color: #ffffff;
+    background: #eff6ff;
+    color: var(--accent);
+    border-color: #bfdbfe;
     transform: scale(1.1);
   }
 
@@ -70,10 +84,16 @@ const STYLES = `
     transition: background .2s, border-color .2s, color .2s, transform .15s;
   }
   .social-btn:hover {
-    background: #111827;
-    border-color: #111827;
-    color: #ffffff;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: var(--accent);
     transform: translateY(-2px);
+  }
+
+  .status-note {
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.45;
   }
 
   @keyframes fadeUp {
@@ -101,12 +121,12 @@ function validate(values) {
 }
 
 function InputField({ label, name, type = 'text', placeholder, value, onChange, onBlur, touched, error, as }) {
-  const className = `field-input mt-1.5 w-full rounded-xl border px-4 py-3 text-slate-900 text-sm placeholder:text-slate-400 ${
-    touched ? (error ? 'invalid border-red-400 bg-red-50' : 'valid border-green-500 bg-green-50') : 'border-slate-200 bg-slate-50'
+  const className = `field-input mt-1.5 w-full rounded-lg border px-4 py-3.5 text-slate-900 text-sm placeholder:text-slate-400 shadow-[0_1px_2px_rgba(15,23,42,.04)] ${
+    touched ? (error ? 'invalid border-red-400 bg-red-50' : 'valid border-blue-500 bg-blue-50') : 'border-slate-200 bg-white'
   }`;
 
   return (
-    <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500">
+    <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
       {label}
       {as === 'textarea' ? (
         <textarea
@@ -178,7 +198,8 @@ const FacebookIcon = () => (
 export default function Contact() {
   const [values, setValues] = useState(INITIAL);
   const [touched, setTouched] = useState(TOUCHED_INIT);
-  const [sent, setSent] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [status, setStatus] = useState({ type: 'idle', message: '' });
 
   const errors = validate(values);
   const isValid = Object.keys(errors).length === 0;
@@ -186,7 +207,7 @@ export default function Contact() {
   const onChange = (e) => {
     const { name, value } = e.target;
     setValues((prev) => ({ ...prev, [name]: value }));
-    if (sent) setSent(false);
+    if (status.type !== 'idle') setStatus({ type: 'idle', message: '' });
   };
 
   const onBlur = (e) => {
@@ -194,13 +215,43 @@ export default function Contact() {
     setTouched((prev) => ({ ...prev, [name]: true }));
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setTouched({ nom: true, email: true, sujet: true, message: true });
     if (!isValid) return;
-    setSent(true);
-    setValues(INITIAL);
-    setTouched(TOUCHED_INIT);
+
+    if (!isEmailJsConfigured()) {
+      setStatus({
+        type: 'error',
+        message: "Configuration Email indisponible. Veuillez réessayer plus tard.",
+      });
+      return;
+    }
+
+    setIsSending(true);
+    setStatus({ type: 'idle', message: '' });
+
+    try {
+      await emailjs.sendForm(
+        EMAILJS_CONFIG.serviceId,
+        EMAILJS_CONFIG.templateId,
+        e.currentTarget,
+        {
+          publicKey: EMAILJS_CONFIG.publicKey,
+        }
+      );
+
+      setStatus({ type: 'success', message: 'Message envoyé avec succès !' });
+      setValues(INITIAL);
+      setTouched(TOUCHED_INIT);
+    } catch {
+      setStatus({
+        type: 'error',
+        message: "Échec de l'envoi. Vérifiez votre connexion puis réessayez.",
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const contactItems = [
@@ -221,13 +272,13 @@ export default function Contact() {
       <div className="contact-page min-h-screen flex flex-col" style={{ fontFamily: 'var(--font-body)' }}>
         <Navbar />
 
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           <div className="max-w-5xl mx-auto">
 
             {/* Header */}
-            <div className="text-center mb-8 animate-fadeup">
+            <div className="text-center mb-10 animate-fadeup">
 <h1
-                className="text-4xl sm:text-5xl text-slate-900 leading-tight mb-4"
+                className="text-4xl sm:text-5xl font-semibold text-slate-900 leading-tight mb-3"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 Parlons de votre besoin
@@ -236,15 +287,21 @@ export default function Contact() {
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-7">
 
               {/* Form */}
               <form
                 onSubmit={onSubmit}
                 noValidate
-                className="animate-fadeup delay-1 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-sm p-6 sm:p-8 shadow-[0_4px_32px_rgba(0,0,0,0.07)]"
+                className="animate-fadeup delay-1 rounded-2xl border border-slate-200 bg-white p-7 sm:p-9 shadow-[0_12px_36px_rgba(15,23,42,0.07)]"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <input type="hidden" name="to_email" value="tokponeal@gmail.com" />
+                <input type="hidden" name="from_name" value={values.nom} />
+                <input type="hidden" name="from_email" value={values.email} />
+                <input type="hidden" name="subject" value={values.sujet} />
+                <input type="hidden" name="message" value={values.message} />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <InputField
                     label="Nom complet"
                     name="nom"
@@ -268,7 +325,7 @@ export default function Contact() {
                   />
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-6">
                   <InputField
                     label="Sujet"
                     name="sujet"
@@ -281,7 +338,7 @@ export default function Contact() {
                   />
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-6">
                   <InputField
                     label="Message"
                     name="message"
@@ -295,23 +352,32 @@ export default function Contact() {
                   />
                 </div>
 
-                <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="mt-7 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <button
                     type="submit"
-                    className="send-btn inline-flex items-center gap-2.5 rounded-xl px-7 py-3.5 text-sm font-semibold"
+                    disabled={isSending}
+                    className="send-btn inline-flex items-center gap-2.5 rounded-xl px-7 py-3.5 text-sm font-semibold tracking-[0.01em]"
                   >
-                    <span>Envoyer le message</span>
+                    <span>{isSending ? 'Envoi en cours...' : 'Envoyer le message'}</span>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                       <path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>
                     </svg>
                   </button>
 
-                  {sent && (
-                    <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                  {status.type === 'success' && (
+                    <div className="status-note flex items-center gap-2 text-emerald-700 bg-emerald-50/90 border border-emerald-200 px-4 py-3">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
                       </svg>
-                      Message envoyé avec succès !
+                      {status.message}
+                    </div>
+                  )}
+                  {status.type === 'error' && (
+                    <div className="status-note flex items-center gap-2 text-red-700 bg-red-50/90 border border-red-200 px-4 py-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      {status.message}
                     </div>
                   )}
                 </div>
@@ -319,7 +385,7 @@ export default function Contact() {
 
               {/* Info card */}
               <aside className="animate-fadeup delay-2 flex flex-col gap-5">
-                <div className="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-sm p-6 sm:p-7 shadow-[0_4px_32px_rgba(0,0,0,0.07)]">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-[0_10px_34px_rgba(15,23,42,0.06)]">
                   <h2 className="text-lg font-semibold text-slate-900 mb-5" style={{ fontFamily: 'var(--font-display)' }}>
                     Coordonnées
                   </h2>
@@ -340,7 +406,7 @@ export default function Contact() {
                   </ul>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-sm p-6 shadow-[0_4px_32px_rgba(0,0,0,0.07)]">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_34px_rgba(15,23,42,0.06)]">
                   <p className="text-[11px] uppercase tracking-widest text-slate-400 font-semibold mb-4">Réseaux sociaux</p>
                   <div className="flex items-center gap-2.5">
                     {socials.map(({ label, icon, href }) => (
@@ -359,11 +425,11 @@ export default function Contact() {
                 {/* Availability badge */}
                 <div className="rounded-2xl border border-slate-200 bg-slate-900 p-6 text-white">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                     <span className="text-xs font-semibold uppercase tracking-widest text-slate-300">Disponible</span>
                   </div>
                   <p className="text-sm text-slate-300 leading-relaxed">
-                    Nous répondons en général sous <span className="text-white font-semibold">24 heures</span> les jours ouvrés.
+                    Nous répondons en général sous <span className="text-blue-300 font-semibold">24 heures</span> les jours ouvrés.
                   </p>
                 </div>
               </aside>

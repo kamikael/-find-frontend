@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../../assets/images/logo.png';
 
 const STYLES = `
@@ -15,7 +15,7 @@ const STYLES = `
   }
   .nav-header.scrolled {
     box-shadow: 0 8px 30px rgba(0,0,0,.08);
-    background: rgba(255,255,255,.98);
+    background: transparent;
   }
 
   .mobile-drawer {
@@ -36,8 +36,8 @@ const STYLES = `
     padding: 12px 28px;
     border-radius: 12px;
     border: 1.5px solid #111111;
-    background: #111111;
-    color: #ffffff;
+    background: transparent;
+    color: #111111;
     font-family: 'DM Sans', sans-serif;
     font-weight: 500;
     letter-spacing: .02em;
@@ -46,13 +46,26 @@ const STYLES = `
     will-change: transform;
   }
   .premium-cta:hover {
-    background: #1a1a1a;
-    color: #ffffff;
+    background: rgba(17, 17, 17, 0.06);
+    color: #111111;
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 24px rgba(0,0,0,.22);
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
   }
   .premium-cta:active {
     transform: scale(.98);
+    background: #d7d4cc;
+    color: #111111;
+    border-color: #111111;
+    box-shadow: 0 6px 18px rgba(0,0,0,.10);
+  }
+  .premium-cta:focus,
+  .premium-cta:focus-visible {
+    background: #d7d4cc;
+    color: #111111;
+    border-color: #111111;
+  }
+  .premium-cta {
+    -webkit-tap-highlight-color: transparent;
   }
   .premium-cta .cta-arrow {
     transition: transform .3s ease;
@@ -66,17 +79,26 @@ const STYLES = `
     padding-bottom: 16px;
   }
 
+  .logo-crop {
+    width: 180px;
+    height: 56px;
+    overflow: hidden;
+    border-radius: 4px;
+    display: block;
+  }
+
   .logo-img {
-    width: 150px;
-    height: 46px;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
     display: block;
   }
 
   @media (min-width: 640px) {
-    .logo-img {
-      width: 170px;
-      height: 52px;
+    .logo-crop {
+      width: 196px;
+      height: 60px;
     }
   }
 
@@ -97,6 +119,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const drawerRef = useRef(null);
 
   useEffect(() => {
@@ -119,6 +142,10 @@ export default function Navbar() {
   }, [menuOpen]);
 
   const close = () => setMenuOpen(false);
+  const goToApply = () => {
+    close();
+    navigate('/demande-stage');
+  };
 
   const isActive = (to) => {
     if (to.includes('#')) {
@@ -134,12 +161,14 @@ export default function Navbar() {
       <style>{STYLES}</style>
 
       <header
-        className={`nav-header sticky top-0 z-50 border-b border-zinc-100 bg-white/95 backdrop-blur-xl ${scrolled ? 'scrolled' : ''}`}
+        className={`nav-header sticky top-0 z-50 border-b border-transparent bg-transparent backdrop-blur-xl ${scrolled ? 'scrolled' : ''}`}
         style={{ fontFamily: 'var(--font-sans)' }}
       >
         <div className="w-full max-w-7xl mx-auto h-[72px] md:h-[82px] px-3 sm:px-6 lg:px-8 grid grid-cols-[auto_1fr_auto] items-center gap-3">
           <Link to="/" className="shrink-0" aria-label="Accueil">
-            <img src={logo} alt="#Find" className="logo-img" />
+            <span className="logo-crop">
+              <img src={logo} alt="#Find" className="logo-img" />
+            </span>
           </Link>
 
           <nav className="hidden md:flex items-center justify-center gap-1" aria-label="Navigation principale">
@@ -156,8 +185,9 @@ export default function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center justify-end">
-            <Link
-              to="/demande-stage"
+            <button
+              type="button"
+              onClick={goToApply}
               className="premium-cta text-[12px]"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
@@ -166,7 +196,7 @@ export default function Navbar() {
                 <line x1="5" y1="12" x2="19" y2="12" />
                 <polyline points="12 5 19 12 12 19" />
               </svg>
-            </Link>
+            </button>
           </div>
 
           <div className="md:hidden flex items-center justify-end">
@@ -233,9 +263,9 @@ export default function Navbar() {
             </Link>
           ))}
 
-          <Link
-            to="/demande-stage"
-            onClick={close}
+          <button
+            type="button"
+            onClick={goToApply}
             className="premium-cta premium-cta-mobile mt-2 text-sm"
             style={{ fontFamily: "'DM Sans', sans-serif" }}
           >
@@ -244,7 +274,7 @@ export default function Navbar() {
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
-          </Link>
+          </button>
         </div>
       </nav>
     </>

@@ -4,9 +4,11 @@ import { useApplication } from '../../context/ApplicationContext';
 import Navbar from '../../components/Navbar/Navbar';
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
 
   :root {
+    --font-body:     'Inter', system-ui, sans-serif;
+    --font-title:    'Poppins', system-ui, sans-serif;
     --indigo:        #6366F1;
     --indigo-light:  #EEF2FF;
     --indigo-ring:   rgba(99,102,241,0.16);
@@ -29,6 +31,7 @@ const STYLES = `
     margin: 0;
     padding: 0;
   }
+  .form-scope { font-family: var(--font-body); color: #111827; }
 
   /* ── Noise ── */
   .noise::before {
@@ -56,12 +59,13 @@ const STYLES = `
     padding: 20px 16px 8px 16px;
     background: var(--white);
     border: 1.5px solid var(--border);
-    border-radius: 10px;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    border-radius: 12px;
+    font-family: var(--font-body);
     font-size: 14px;
     color: var(--ink);
     outline: none;
-    transition: border-color .18s, box-shadow .18s, background .15s;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    transition: border-color .2s, box-shadow .2s, background .15s;
     -webkit-appearance: none; appearance: none;
   }
   .fl-in::placeholder { color: transparent; }
@@ -70,8 +74,8 @@ const STYLES = `
     position: absolute;
     left: 16px; top: 50%;
     transform: translateY(-50%);
-    font-family: 'DM Sans', system-ui, sans-serif;
-    font-size: 13.5px; color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 13px; color: #6b7280;
     pointer-events: none;
     transition: top .17s cubic-bezier(.16,1,.3,1),
                 transform .17s cubic-bezier(.16,1,.3,1),
@@ -88,12 +92,12 @@ const STYLES = `
 
   .fl-in:focus {
     border-color: var(--indigo);
-    box-shadow: 0 0 0 3.5px var(--indigo-ring);
+    box-shadow: 0 0 0 3px var(--indigo-ring), 0 10px 20px rgba(15, 23, 42, 0.06);
     background: var(--white);
   }
-  .fl-in:hover:not(:focus) { border-color: #a1a1aa; }
+  .fl-in:hover:not(:focus) { border-color: #cbd5e1; }
 
-  .fl-in.ok  { border-color: #86efac; }
+  .fl-in.ok  { border-color: #93c5fd; background: #f8fbff; }
   .fl-in.ok:focus { border-color: var(--success); box-shadow: 0 0 0 3.5px rgba(22,163,74,.12); }
   .fl-in.err { border-color: #fca5a5; background: var(--danger-light); }
   .fl-in.err:focus { border-color: var(--danger); box-shadow: 0 0 0 3.5px rgba(220,38,38,.10); }
@@ -113,8 +117,8 @@ const STYLES = `
     padding: 22px 14px 6px 16px;
     background: var(--white);
     border: 1.5px solid var(--border);
-    border-radius: 10px;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    border-radius: 12px;
+    font-family: var(--font-body);
     color: var(--ink);
     text-align: left;
     display: flex;
@@ -124,7 +128,7 @@ const STYLES = `
     cursor: pointer;
     transition: border-color .18s, box-shadow .18s, background .15s;
   }
-  .sel-btn:hover { border-color: #a1a1aa; }
+  .sel-btn:hover { border-color: #cbd5e1; }
   .sel.open .sel-btn {
     border-color: var(--indigo);
     box-shadow: 0 0 0 3.5px var(--indigo-ring);
@@ -143,8 +147,8 @@ const STYLES = `
     z-index: 50;
     background: var(--white);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+    border-radius: 12px;
+    box-shadow: 0 16px 30px rgba(2, 6, 23, 0.12);
     overflow: hidden;
   }
   .sel-option {
@@ -153,7 +157,7 @@ const STYLES = `
     background: transparent;
     text-align: left;
     padding: 10px 14px;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: var(--font-body);
     font-size: 14px;
     color: #27272a;
     cursor: pointer;
@@ -170,7 +174,7 @@ const STYLES = `
     animation: errIn .2s ease both;
     display:flex; align-items:center; gap:4px;
     margin-top:5px;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: var(--font-body);
     font-size: 11px; font-weight: 500; color: var(--danger);
   }
 
@@ -178,9 +182,10 @@ const STYLES = `
   .dz {
     position:relative; overflow:hidden;
     border: 1.5px dashed var(--border);
-    border-radius: 10px; padding: 28px 20px;
+    border-radius: 12px; padding: 28px 20px;
     text-align: center; background: var(--white); cursor: pointer;
-    transition: border-color .18s, background .18s, box-shadow .18s;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    transition: border-color .2s, background .2s, box-shadow .2s;
   }
   .dz:hover, .dz.drag {
     border-color: var(--indigo);
@@ -198,9 +203,9 @@ const STYLES = `
     width:100%; display:inline-flex; align-items:center; justify-content:center; gap:10px;
     padding: 16px 28px;
     background: var(--ink); color: var(--white);
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: var(--font-body);
     font-size: 14px; font-weight: 600; letter-spacing: .02em;
-    border:none; border-radius: 10px; cursor: pointer;
+    border:1px solid var(--ink); border-radius: 12px; cursor: pointer;
     position:relative; overflow:hidden;
     transition: transform .2s cubic-bezier(.16,1,.3,1), box-shadow .2s, background .15s;
   }
@@ -210,7 +215,7 @@ const STYLES = `
     transform: skewX(-18deg); transition: left 0s;
   }
   .btn-cta:hover::before { left:135%; transition: left .5s cubic-bezier(.22,1,.36,1); }
-  .btn-cta:hover  { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,.22); background:#1a1a1a; }
+  .btn-cta:hover  { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.22); background:#1a1a1a; }
   .btn-cta:active { transform: scale(.985); }
   .btn-cta:disabled { opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
 
@@ -348,7 +353,7 @@ function Field({ label, name, type='text', value, onChange, error, required, hin
         )}
       </div>
       {error && <p className="err-msg"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{error}</p>}
-      {hint && !error && <p style={{marginTop:5,fontSize:11,color:'var(--muted)',fontFamily:"'DM Sans',system-ui",lineHeight:1.5}}>{hint}</p>}
+      {hint && !error && <p style={{marginTop:6,fontSize:11,color:'#6B7280',fontFamily:'var(--font-body)',lineHeight:1.5}}>{hint}</p>}
     </div>
   );
 }
@@ -358,7 +363,7 @@ function FileZone({ file, onChange, error, label = 'CV / Document' }) {
   const [drag, setDrag] = useState(false);
   return (
     <div>
-      <p style={{fontSize:11,fontWeight:600,letterSpacing:'.14em',textTransform:'uppercase',color:'var(--muted)',marginBottom:8,fontFamily:"'DM Sans',system-ui"}}>
+      <p style={{fontSize:11,fontWeight:600,letterSpacing:'.14em',textTransform:'uppercase',color:'#6B7280',marginBottom:8,fontFamily:'var(--font-body)'}}>
         {label} <span style={{color:'var(--danger)'}}>*</span>
       </p>
       <div className={`dz ${drag?'drag':''}`}
@@ -375,7 +380,7 @@ function FileZone({ file, onChange, error, label = 'CV / Document' }) {
               </svg>
             </div>
             <div>
-              <p style={{fontSize:13,fontWeight:600,color:'#3f3f46',fontFamily:"'DM Sans',system-ui",maxWidth:220,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{file.name}</p>
+              <p style={{fontSize:13,fontWeight:600,color:'#3f3f46',fontFamily:'var(--font-body)',maxWidth:220,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{file.name}</p>
               <p style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{(file.size/1024).toFixed(0)} Ko · Cliquer pour changer</p>
             </div>
           </div>
@@ -387,7 +392,7 @@ function FileZone({ file, onChange, error, label = 'CV / Document' }) {
                 <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
             </div>
-            <p style={{fontSize:13,fontWeight:500,color:'#52525b',fontFamily:"'DM Sans',system-ui"}}>
+            <p style={{fontSize:13,fontWeight:500,color:'#52525b',fontFamily:'var(--font-body)'}}>
               Glisser-déposer ou <span style={{color:'var(--indigo)',fontWeight:600}}>parcourir</span>
             </p>
             <p style={{fontSize:11,color:'var(--muted)'}}>PDF, DOC, DOCX · Max 5 Mo</p>
@@ -404,7 +409,7 @@ function Section({ label }) {
   return (
     <div style={{display:'flex',alignItems:'center',gap:12,padding:'4px 0'}}>
       <div style={{width:3,height:14,borderRadius:99,background:'var(--indigo)',flexShrink:0}} />
-      <span style={{fontSize:10,fontWeight:700,letterSpacing:'.22em',textTransform:'uppercase',color:'var(--indigo)',fontFamily:"'DM Sans',system-ui",flexShrink:0}}>
+      <span style={{fontSize:10,fontWeight:700,letterSpacing:'.22em',textTransform:'uppercase',color:'var(--indigo)',fontFamily:'var(--font-body)',flexShrink:0}}>
         {label}
       </span>
       <div style={{flex:1,height:1,background:'var(--indigo-light)'}} />
@@ -418,8 +423,8 @@ function Progress({ pct }) {
   return (
     <div>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-        <span style={{fontSize:10,fontWeight:600,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--muted)',fontFamily:"'DM Sans',system-ui"}}>Complétion</span>
-        <span style={{fontSize:11,fontWeight:700,color,fontFamily:"'DM Sans',system-ui",transition:'color .5s'}}>{pct}%</span>
+        <span style={{fontSize:10,fontWeight:600,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--muted)',fontFamily:'var(--font-body)'}}>Complétion</span>
+        <span style={{fontSize:11,fontWeight:700,color,fontFamily:'var(--font-body)',transition:'color .5s'}}>{pct}%</span>
       </div>
       <div style={{height:3,background:'#F4F4F5',borderRadius:99,overflow:'hidden'}}>
         <div className="bar" style={{height:'100%',width:`${pct}%`,background:color,borderRadius:99,transition:'width .7s ease'}} />
@@ -565,7 +570,7 @@ export default function Form() {
 
       <div className="noise form-scope" style={{
         minHeight:'100vh', display:'flex', flexDirection:'column',
-        background:'#F3F3F2', fontFamily:"'DM Sans',system-ui,sans-serif",
+        background:'#F8FAFC', fontFamily:'var(--font-body)',
       }}>
         <main style={{flex:1, position:'relative', zIndex:10, padding:'clamp(20px, 4vw, 48px) clamp(14px, 4vw, 24px) clamp(48px, 8vw, 72px)'}}>
           <div style={{maxWidth:680, margin:'0 auto 14px'}}>
@@ -582,7 +587,7 @@ export default function Form() {
                 background:'transparent',
                 border:'none',
                 cursor:'pointer',
-                fontFamily:"'DM Sans',system-ui",
+                fontFamily:'var(--font-body)',
               }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
@@ -596,13 +601,13 @@ export default function Form() {
           <div className="fu" style={{
             maxWidth:680, margin:'0 auto',
             background:'var(--white)',
-            borderRadius:24,
+            borderRadius:20,
             border:'1px solid #E4E4E7',
-            boxShadow:'0 8px 48px rgba(0,0,0,0.09), 0 1px 0 rgba(0,0,0,0.03)',
+            boxShadow:'0 12px 38px rgba(15,23,42,0.08), 0 1px 0 rgba(15,23,42,0.04)',
             overflow:'hidden',
           }}>
 
-            <div style={{padding:'clamp(18px, 4vw, 36px) clamp(14px, 5vw, 44px) clamp(24px, 6vw, 48px)', display:'flex', flexDirection:'column', gap:28}}>
+            <div style={{padding:'clamp(20px, 4vw, 36px) clamp(16px, 5vw, 44px) clamp(26px, 6vw, 48px)', display:'flex', flexDirection:'column', gap:30}}>
 
               {/* Header interne */}
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
@@ -620,8 +625,8 @@ export default function Form() {
                     </svg>
                   </div>
                   <div>
-                    <p style={{fontSize:10,fontWeight:700,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--muted)'}}>Dossier 2026</p>
-                    <p style={{fontSize:13,fontWeight:600,color:'var(--ink)',marginTop:1}}>Stage académique</p>
+                    <p style={{fontSize:10,fontWeight:700,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--muted)',fontFamily:'var(--font-body)'}}>Dossier 2026</p>
+                    <p style={{fontSize:13,fontWeight:600,color:'var(--ink)',marginTop:1,fontFamily:'var(--font-title)'}}>Stage académique</p>
                   </div>
                 </div>
                 <p style={{fontSize:11,color:'var(--muted)'}}>
@@ -631,11 +636,11 @@ export default function Form() {
 
               <Progress pct={pct} />
 
-              <form onSubmit={handleSubmit} noValidate style={{display:'flex',flexDirection:'column',gap:24}}>
+              <form onSubmit={handleSubmit} noValidate style={{display:'flex',flexDirection:'column',gap:26}}>
 
                 <Section label="Informations personnelles" />
 
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:14}}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:16}}>
                   <Field label="Nom" name="nom" value={values.nom} onChange={handle} error={errors.nom} required />
                   <Field label="Prénom" name="prenom" value={values.prenom} onChange={handle} error={errors.prenom} required />
                 </div>
@@ -650,7 +655,7 @@ export default function Form() {
 
                 <Section label="Parcours académique" />
 
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:14}}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:16}}>
                   <Field label="Niveau" name="niveau" type="select"
                     value={values.niveau} onChange={handle} error={errors.niveau} required options={NIVEAUX} />
                   <Field label="Secteur cible" name="secteur" type="select"
@@ -669,7 +674,7 @@ export default function Form() {
                     <div style={{
                       display:'flex',alignItems:'flex-start',gap:10,
                       background:'var(--amber-light)',border:'1px solid #FDE68A',
-                      borderRadius:10,padding:'12px 14px',
+                      borderRadius:12,padding:'12px 14px',
                     }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="var(--amber)" strokeWidth="2.2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}>
@@ -681,7 +686,7 @@ export default function Form() {
                         La Licence requiert une inscription en binôme. Renseignez les informations de votre partenaire.
                       </p>
                     </div>
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:14}}>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:16}}>
                       <Field label="Nom du binôme" name="nomBinome"
                         value={values.nomBinome} onChange={handle} error={errors.nomBinome} required />
                       <Field label="Prénom du binôme" name="prenomBinome"
@@ -693,7 +698,7 @@ export default function Form() {
                 <Section label="Documents" />
 
                 {isBinome ? (
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:14}}>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:16}}>
                     <FileZone
                       label="CV étudiant 1"
                       file={files.primary}
@@ -722,7 +727,7 @@ export default function Form() {
                   <div style={{
                     display:'flex',alignItems:'flex-start',gap:10,
                     background:'var(--danger-light)',border:'1px solid #FECACA',
-                    borderRadius:10,padding:'12px 14px',
+                    borderRadius:12,padding:'12px 14px',
                   }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                       stroke="var(--danger)" strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}>
@@ -759,7 +764,7 @@ export default function Form() {
                   )}
                 </button>
 
-                <p style={{textAlign:'center',fontSize:11,color:'#D4D4D8',lineHeight:1.6}}>
+                <p style={{textAlign:'center',fontSize:11,color:'#6B7280',lineHeight:1.6}}>
                   En soumettant, vous acceptez nos conditions d'utilisation.<br/>
                   Vos données sont chiffrées et confidentielles.
                 </p>
