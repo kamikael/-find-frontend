@@ -4,8 +4,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import Filters from '../../components/Filters/Filters';
 import { useApplication } from '../../context/ApplicationContext';
-import { SECTORS } from '../../data/sectors';
-
+import { getSectors } from '../../utils/api';
 /* ══════════════════════════════════════════════════════════════════
    PALETTE GLOBALE
    ─ Base    : #ffffff blanc  /  #09090b noir
@@ -743,6 +742,7 @@ export default function DemandeStage() {
   const { setSectorAndModality } = useApplication();
 
   const [level, setLevel]     = useState('Licence');
+  const [data, setdata] = useState([]);
   const [filters, setFilters] = useState({ niveau: ['Licence'], statut: [], domaine: [] });
   const [search, setSearch]   = useState('');
   const [sortBy, setSortBy]   = useState('default');
@@ -781,20 +781,39 @@ export default function DemandeStage() {
       setLevel(nextLevel);
     }
   }, [level]);
+  
+  useEffect(()=>{
 
-  const sectors = SECTORS
-    .filter((s) =>
-      !search
-      || stripAccents(s.name ?? '').includes(stripAccents(search))
-      || stripAccents(s.description ?? '').includes(stripAccents(search))
-    )
-    .filter((s) => matchStatus(s, filters.statut))
-    .filter((s) => matchDomain(s, filters.domaine))
-    .sort((a, b) => {
-      if (sortBy === 'places') return (b.remaining ?? 0) - (a.remaining ?? 0);
-      if (sortBy === 'alpha')  return (a.name ?? '').localeCompare(b.name ?? '');
-      return 0;
-    });
+   (async () => {
+    const sectors = await getSectors(); 
+    setdata(sectors.map(item=>{
+  return {
+    id : item.id ?? item._id ?? null,
+    name: item.name,
+    description: item.description,
+    domain: item.name,
+    remaining: item.available_slots,
+    total: item.total_slots,
+  }
+}) ?? []);
+  })().catch(console.error);
+  
+},[])
+
+const sectors = data
+  .filter((s) =>
+    !search
+    || stripAccents(s.name ?? '').includes(stripAccents(search))
+    || stripAccents(s.description ?? '').includes(stripAccents(search))
+  )
+  .filter((s) => matchStatus(s, filters.statut))
+  .filter((s) => matchDomain(s, filters.domaine))
+  .sort((a, b) => {
+    if (sortBy === 'places') return (b.remaining ?? 0) - (a.remaining ?? 0);
+    if (sortBy === 'alpha')  return (a.name ?? '').localeCompare(b.name ?? '');
+    return 0;
+  });
+  
 
   return (
     <>
@@ -858,7 +877,7 @@ export default function DemandeStage() {
           {/* ══ CONTENU ══ */}
           <div className="max-w-[1120px] mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-16 sm:pb-24">
 
-            {!isLoading && <StatsBar sectors={SECTORS} />}
+            {!isLoading && <StatsBar sectors={data} />}
 
             {/* ── Barre de contrôle sticky ── */}
             <div className="hero-in d4 sticky top-2 sm:top-3 z-30 mb-10 sm:mb-12
@@ -872,7 +891,7 @@ export default function DemandeStage() {
                   onLevelChange={handleLevel}
                   onFiltersChange={handleFiltersChange}
                   resultCount={sectors.length}
-                  totalCount={SECTORS.length}
+                  totalCount={data.length}
                 />
               </div>
 

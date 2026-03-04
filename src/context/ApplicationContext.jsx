@@ -8,6 +8,7 @@ const ApplicationContext = createContext(null);
 
 export function ApplicationProvider({ children }) {
   const [sector, setSector] = useState(null);
+  const [provider_id, setProvider_id] = useState('');
   const [level, setLevel] = useState(''); // 'Licence' | 'Master'
   const [isPair, setIsPair] = useState(false); // true = binôme (Licence), false = individuel (Master)
   const [student1, setStudent1] = useState({ nom: '', prenom: '', email: '', telephone: '', universite: '', filiere: '', niveau: '' });
@@ -37,6 +38,8 @@ export function ApplicationProvider({ children }) {
     isPair,
     setSectorAndModality,
     student1,
+    provider_id,
+    setProvider_id,
     setStudent1,
     student2,
     setStudent2,

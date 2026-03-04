@@ -461,7 +461,9 @@ export default function Form() {
     filiere: student1?.filiere ?? '',
     nomBinome: student2?.nom ?? '',
     prenomBinome: student2?.prenom ?? '',
+    emailBinome: student2?.email ?? '',
   });
+
   const [files, setFiles]     = useState({ primary: null, partner: null });
   const [errors, setErrors]   = useState({});
   const [loading, setLoading] = useState(false);
@@ -508,6 +510,9 @@ export default function Form() {
     }
     if (!files.primary) e.filePrimary = 'Veuillez joindre votre CV.';
     if (isBinome && !files.partner) e.filePartner = 'Veuillez joindre le CV du binôme.';
+    if (isBinome && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.emailBinome)) {
+  e.emailBinome = 'E-mail du binôme invalide.';
+}
     return e;
   };
 
@@ -534,7 +539,7 @@ export default function Form() {
         ? {
             nom: values.nomBinome.trim(),
             prenom: values.prenomBinome.trim(),
-            email: '',
+            email: values.emailBinome.trim(),
             telephone: '',
             universite: '',
             filiere: '',
@@ -545,6 +550,7 @@ export default function Form() {
     const cvPayload = isBinome
       ? { student1: files.primary, student2: files.partner }
       : files.primary;
+      console.log(cvPayload);
     setCvFile(cvPayload);
     setCvValid(isBinome ? Boolean(files.primary && files.partner) : Boolean(files.primary));
     setLoading(false);
@@ -686,12 +692,11 @@ export default function Form() {
                         La Licence requiert une inscription en binôme. Renseignez les informations de votre partenaire.
                       </p>
                     </div>
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:16}}>
-                      <Field label="Nom du binôme" name="nomBinome"
-                        value={values.nomBinome} onChange={handle} error={errors.nomBinome} required />
-                      <Field label="Prénom du binôme" name="prenomBinome"
-                        value={values.prenomBinome} onChange={handle} error={errors.prenomBinome} required />
-                    </div>
+                   <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:16}}>
+  <Field label="Prénom du binôme" name="prenomBinome" value={values.prenomBinome} onChange={handle} error={errors.prenomBinome} required />
+  <Field label="Nom du binôme" name="nomBinome" value={values.nomBinome} onChange={handle} error={errors.nomBinome} required />
+  <Field label="Adresse e-mail binôme" name="emailBinome" type="email" value={values.emailBinome} onChange={handle} error={errors.emailBinome} required hint="Les confirmations seront envoyées à cette adresse." />
+</div>
                   </>
                 )}
 

@@ -7,11 +7,13 @@ import Recapitulatif from './pages/Recapitulatif/Recapitulatif';
 import Success from './pages/Success/Success';
 import Contact from './pages/Contact/Contact';
 import ScrollToTop from './components/ScrollToTop';
+import Failed from './pages/failed/failed';
 
 /**
  * Point d'entrée de l'application #Find.
  * Routes : Accueil, Demande de stage, Formulaire, Récapitulatif, Success.
  */
+
 function App() {
   return (
     <ApplicationProvider>
@@ -23,6 +25,7 @@ function App() {
           <Route path="/formulaire" element={<Formulaire />} />
           <Route path="/recapitulatif" element={<Recapitulatif />} />
           <Route path="/success" element={<Success />} />
+          <Route path="/failed" element={<Failed />} />
           <Route path="/contact" element={<Contact />} />
         </Routes>
       </BrowserRouter>
