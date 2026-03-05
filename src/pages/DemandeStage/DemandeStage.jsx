@@ -1,522 +1,412 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import Filters from '../../components/Filters/Filters';
 import { useApplication } from '../../context/ApplicationContext';
 import { getSectors } from '../../utils/api';
-/* ══════════════════════════════════════════════════════════════════
-   PALETTE GLOBALE
-   ─ Base    : #ffffff blanc  /  #09090b noir
-   ─ Accent  : #6366F1 indigo (moderne, tech, confiance)
-   ─ Chaud   : #F59E0B amber  (urgence, énergie)
-   ─ Neutre  : gamme zinc pour les gris
-══════════════════════════════════════════════════════════════════ */
-const C = {
-  indigo:       '#6366F1',
-  indigoLight:  '#EEF2FF',
-  indigoDim:    'rgba(99,102,241,0.12)',
-  amber:        '#F59E0B',
-  amberLight:   '#FFFBEB',
-  black:        '#09090b',
-  white:        '#ffffff',
-  success:      '#16A34A',
-  successLight: '#F0FDF4',
-  danger:       '#DC2626',
-  dangerLight:  '#FEF2F2',
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   DESIGN TOKENS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+const G = {
+  gold:       '#C9A84C',
+  goldLight:  '#E2C97E',
+  goldDark:   '#A8892A',
+  goldDim:    'rgba(201,168,76,0.10)',
+  goldBorder: 'rgba(201,168,76,0.25)',
+  ink:        '#0A0A0A',
+  white:      '#FFFFFF',
+  offWhite:   '#F9F8F5',
+  border:     '#E8E4DC',
+  muted:      '#8A8680',
+  success:    '#15803D',
+  successBg:  '#F0FDF4',
+  danger:     '#DC2626',
+  dangerBg:   '#FEF2F2',
+  amber:      '#D97706',
+  amberBg:    '#FFFBEB',
 };
 
-/* ══════════════════════════════════════════════
-   STYLES GLOBAUX
-══════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   GLOBAL STYLES
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Cabinet+Grotesk:wght@300;400;500;600;700;800&display=swap');
 
   :root {
-    --indigo:      #6366F1;
-    --indigo-light:#EEF2FF;
-    --amber:       #F59E0B;
-    --amber-light: #FFFBEB;
-    --ink:         #09090b;
+    --gold:        #C9A84C;
+    --gold-light:  #E2C97E;
+    --gold-dark:   #A8892A;
+    --gold-dim:    rgba(201,168,76,0.10);
+    --gold-border: rgba(201,168,76,0.25);
+    --ink:         #0A0A0A;
+    --white:       #FFFFFF;
+    --off-white:   #F9F8F5;
+    --border:      #E8E4DC;
+    --muted:       #8A8680;
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body:    'Cabinet Grotesk', sans-serif;
   }
 
-  /* ── Live dot indigo ── */
-  @keyframes pulse-indigo {
-    0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,.55); }
-    50%      { box-shadow: 0 0 0 6px rgba(99,102,241,0); }
-  }
-  .live-dot { animation: pulse-indigo 2s ease-in-out infinite; }
+  * { box-sizing: border-box; }
 
-  /* ── Card entrance ── */
-  @keyframes card-rise {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .card-entry {
-    opacity: 0;
-    animation: card-rise .5s cubic-bezier(.22,1,.36,1) forwards;
-  }
-
-  /* ── Hero reveal ── */
-  @keyframes hero-in {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .hero-in    { animation: hero-in .5s ease both; }
-  .hero-in.d1 { animation-delay: .08s; }
-  .hero-in.d2 { animation-delay: .18s; }
-  .hero-in.d3 { animation-delay: .28s; }
-  .hero-in.d4 { animation-delay: .40s; }
-
-  /* ── Spinner ── */
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spin { animation: spin .9s linear infinite; }
-
-  /* ── Skeleton ── */
-  @keyframes shimmer {
-    0%   { background-position: -500px 0; }
-    100% { background-position:  500px 0; }
-  }
-  .skel {
-    background: linear-gradient(90deg,#f4f4f5 25%,#e4e4e7 50%,#f4f4f5 75%);
-    background-size: 500px 100%;
-    animation: shimmer 1.2s infinite;
-    border-radius: .875rem;
-  }
-
-  /* ── Toast ── */
-  @keyframes toast-in {
-    from { opacity: 0; transform: translateX(32px) scale(.97); }
-    to   { opacity: 1; transform: translateX(0) scale(1); }
-  }
-  .toast-in { animation: toast-in .28s cubic-bezier(.22,1,.36,1) both; }
-
-  /* ── Grain texture ── */
-  .grain::before {
-    content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
-    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E");
-  }
-
-  :focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; border-radius: 6px; }
-  select { -webkit-appearance:none; appearance:none; }
-
-  /* ══ STEPPER ══ */
-  .step-active {
-    background: var(--indigo) !important;
-    border-color: var(--indigo) !important;
-    color: white !important;
-  }
-  .step-done {
-    background: var(--ink) !important;
-    border-color: var(--ink) !important;
-    color: white !important;
-  }
-
-  /* ══ SECTOR CARD ══ */
-  @keyframes bar-fill {
-    from { width: 0%; }
-    to   { width: var(--bar-target); }
-  }
-  @keyframes dot-pulse {
-    0%,100% { opacity:1; transform:scale(1); }
-    50%     { opacity:.45; transform:scale(1.5); }
-  }
-  .sc-bar-animated {
-    animation: bar-fill .9s cubic-bezier(.16,1,.3,1) forwards;
-    animation-delay:.2s;
-    width:0%;
-  }
-  .sc-dot-urgent { animation: dot-pulse 1.5s ease-in-out infinite; }
-
-  /* Card elevation */
-  .sc-card {
-    transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease, border-color .2s;
-  }
-  .sc-root:not(.sc-full):hover .sc-card {
-    transform: translateY(-3px);
-    box-shadow:
-      0 0 0 1px rgba(99,102,241,0.14),
-      0 20px 56px -12px rgba(0,0,0,0.14),
-      0 6px 18px -6px rgba(99,102,241,0.10);
-    border-color: rgba(99,102,241,0.22);
-  }
-
-  /* Sector CTA - transparent indigo */
-  .sc-cta {
-    position: relative;
-    overflow: hidden;
-    background: transparent;
-    border: 1.5px solid #6366F1;
-    color: #6366F1;
-    border-radius: 18px;
-    padding: 9px 22px;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    transition: all .3s ease;
-  }
-  .sc-root:not(.sc-full):hover .sc-cta {
-    background: #6366F1;
-    color: #FFFFFF;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(99,102,241,0.25);
-  }
-  .sc-cta:active { transform: scale(.98); }
-  .sc-cta .sc-cta-arrow { transition: transform .3s ease; }
-  .sc-root:not(.sc-full):hover .sc-cta .sc-cta-arrow { transform: translateX(3px); }
-
-  /* Separator */
-  .sc-divider { height:1px; background:linear-gradient(90deg,transparent,rgba(0,0,0,0.06),transparent); }
-
-  /* Hover accent line */
-  .sc-root:not(.sc-full):hover [data-accent-line] { opacity: 1 !important; }
-
-  /* ══ CONTROL BAR ══ */
-  .ctrl-search {
-    transition: border-color .3s ease, box-shadow .3s ease;
-  }
-  .ctrl-search:focus {
-    outline: none;
-    border-color: #111111 !important;
-    box-shadow: inset 0 -2px 0 #111111;
-  }
-
-  .inst-select {
-    background: transparent;
-    border: 1.5px solid #111111;
-    color: #111111;
-    letter-spacing: .02em;
-    transition: all .3s ease;
-  }
-  .inst-select:hover {
-    background: #111111;
-    color: #ffffff;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
-  }
-  .inst-select:focus {
-    outline: none;
-    border-color: #111111 !important;
-    box-shadow: 0 0 0 2px rgba(0,0,0,0.14);
-  }
-
-  .certified-btn {
-    background: #6366F1;
-    border: 1px solid #6366F1;
-    color: #ffffff;
-    transition: none;
-  }
-  .certified-btn:hover {
-    background: #6366F1;
-    color: #ffffff;
-    transform: none;
-    box-shadow: none;
-  }
-
-  /* ══ HERO UNDERLINE — indigo ══ */
-  .hero-underline { stroke: var(--indigo); }
-
-  /* ══ FOND ARRIÈRE — ivoire + radial-gradient ══ */
-  .hero-bg {
-    background-color: #faf9f7;
+  /* â”€â”€ Page â”€â”€ */
+  .ds-root {
+    font-family: var(--font-body);
+    background: var(--off-white);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     background-image:
-      radial-gradient(circle at 20% 50%, rgba(99,102,241,0.04) 0%, transparent 55%),
-      radial-gradient(circle at 80% 20%, rgba(245,158,11,0.03) 0%, transparent 45%);
+      radial-gradient(ellipse 80% 50% at 0% 0%, rgba(201,168,76,0.05) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 40% at 100% 100%, rgba(201,168,76,0.04) 0%, transparent 55%);
   }
+
+  /* â”€â”€ Animations â”€â”€ */
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+  @keyframes shimmer  { 0%{background-position:-600px 0;} 100%{background-position:600px 0;} }
+  @keyframes spin     { to { transform:rotate(360deg); } }
+  @keyframes barFill  { from{width:0%;} to{width:var(--bw);} }
+  @keyframes breathe  { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.5;transform:scale(1.7);} }
+  @keyframes toastIn  { from{opacity:0;transform:translateX(20px) scale(.96);} to{opacity:1;transform:translateX(0) scale(1);} }
+  @keyframes cardIn   { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+  @keyframes lineGrow { from{width:0;} to{width:48px;} }
+  @keyframes shimmerGold {
+    0%{background-position:-200% center;}
+    100%{background-position:200% center;}
+  }
+  @keyframes urgentPulse {
+    0%,100%{box-shadow:0 0 0 0 rgba(217,119,6,0.5);}
+    50%{box-shadow:0 0 0 6px rgba(217,119,6,0);}
+  }
+
+  .au1  { animation: fadeUp .55s cubic-bezier(.16,1,.3,1) .05s both; }
+  .au2  { animation: fadeUp .55s cubic-bezier(.16,1,.3,1) .12s both; }
+  .au3  { animation: fadeUp .55s cubic-bezier(.16,1,.3,1) .20s both; }
+  .au4  { animation: fadeUp .55s cubic-bezier(.16,1,.3,1) .28s both; }
+  .au5  { animation: fadeUp .55s cubic-bezier(.16,1,.3,1) .36s both; }
+  .a-card { opacity:0; animation: cardIn .45s cubic-bezier(.16,1,.3,1) forwards; }
+  .a-toast { animation: toastIn .28s cubic-bezier(.22,1,.36,1) both; }
+  .a-spin { animation: spin .85s linear infinite; }
+
+  /* â”€â”€ Skeleton â”€â”€ */
+  .skel {
+    background: linear-gradient(90deg, #F0EDE6 25%, #E8E3DA 50%, #F0EDE6 75%);
+    background-size: 600px 100%;
+    animation: shimmer 1.3s infinite;
+    border-radius: 20px;
+  }
+
+  /* â”€â”€ Gold breathe dot â”€â”€ */
+  .g-dot { animation: breathe 2.2s ease-in-out infinite; }
+
+  /* â”€â”€ Accent line â”€â”€ */
+  .accent-line {
+    display: block; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    animation: lineGrow .65s cubic-bezier(.16,1,.3,1) .5s both;
+  }
+
+  /* â”€â”€ Gold heading shimmer â”€â”€ */
+  .gold-shimmer {
+    background: linear-gradient(120deg, var(--gold) 0%, var(--gold-light) 45%, var(--gold) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmerGold 4s linear infinite;
+  }
+
+  /* â”€â”€ Sector card â”€â”€ */
+  .sc-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease, border-color .25s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.04);
+    cursor: pointer;
+  }
+  .sc-wrap:not(.is-full) .sc-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--gold-border);
+    box-shadow:
+      0 0 0 1px rgba(201,168,76,0.15),
+      0 20px 50px -10px rgba(0,0,0,0.12),
+      0 8px 20px -5px rgba(201,168,76,0.12);
+  }
+
+  /* â”€â”€ Card CTA button â”€â”€ */
+  .sc-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 18px;
+    border-radius: 12px;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    transition: background .25s ease, color .25s ease, border-color .2s ease, transform .2s ease, box-shadow .25s ease;
+    cursor: pointer;
+  }
+  .sc-wrap:not(.is-full) .sc-card:hover .sc-btn {
+    background: var(--ink);
+    color: var(--white);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+  }
+  .sc-btn .arr { transition: transform .25s ease; }
+  .sc-wrap:not(.is-full) .sc-card:hover .sc-btn .arr { transform: translateX(4px); }
+  .sc-btn:active { transform: scale(.97); }
+
+  /* â”€â”€ Gold CTA (apply btn hover state - alternative gold variant) â”€â”€ */
+  .sc-wrap:not(.is-full) .sc-card:hover .sc-btn-gold {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+    border-color: var(--gold);
+    color: var(--white);
+    box-shadow: 0 6px 20px rgba(201,168,76,0.30);
+  }
+
+  /* â”€â”€ Bar â”€â”€ */
+  .bar-track { height: 3px; background: #EFEDE7; border-radius: 3px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 3px; animation: barFill .8s cubic-bezier(.16,1,.3,1) .2s both; }
+
+  /* â”€â”€ Search â”€â”€ */
+  .ds-search { transition: border-color .2s ease, box-shadow .2s ease; outline: none; }
+  .ds-search:focus {
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.13);
+  }
+
+  /* â”€â”€ Sort dropdown â”€â”€ */
+  .sort-btn {
+    border: 1.5px solid #1a1a1a; color: #1a1a1a;
+    transition: background .22s ease, color .22s ease, transform .2s ease, box-shadow .2s ease;
+  }
+  .sort-btn:hover {
+    background: #1a1a1a; color: var(--white);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.14);
+  }
+
+  /* â”€â”€ Stepper â”€â”€ */
+  .step-cur  { background: var(--gold) !important; border-color: var(--gold) !important; color: var(--white) !important; }
+  .step-done { background: var(--ink) !important; border-color: var(--ink) !important; color: var(--white) !important; }
+
+  /* â”€â”€ Stats card hover â”€â”€ */
+  .stat-card { transition: transform .25s ease, box-shadow .25s ease, border-color .2s ease; }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+    border-color: rgba(201,168,76,0.28);
+  }
+
+  /* â”€â”€ Sticky control bar â”€â”€ */
+  .ctrl-bar {
+    background: rgba(249,248,245,0.95);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  /* â”€â”€ Urgent ring â”€â”€ */
+  .urgent-ring { animation: urgentPulse 1.8s ease-in-out infinite; }
+
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 6px; }
 `;
 
-/* ══════════════════════════════════════════════
-   ICÔNES SVG PAR SECTEUR
-══════════════════════════════════════════════ */
-const SECTOR_ICONS = {
-  informatique:  (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-  numérique:     (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
-  marketing:     (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
-  communication: (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-  finance:       (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
-  comptabilité:  (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
-  banque:        (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="11" width="20" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-  santé:         (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
-  médical:       (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>,
-  droit:         (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  juridique:     (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  industrie:     (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h20M7 20V10l5-5 5 5v10M10 20v-5h4v5"/></svg>,
-  ingénierie:    (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2M17.66 17.66l-1.41-1.41M6.34 17.66l1.41-1.41"/></svg>,
-  btp:           (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h20M7 20V10l5-5 5 5v10M10 20v-5h4v5"/></svg>,
-  rh:            (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  ressources:    (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  commerce:      (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
-  vente:         (c) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SECTOR ICONS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+const ICONS = {
+  informatique:  c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+  'numérique':   c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+  marketing:     c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+  communication: c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+  finance:       c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  'comptabilité': c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  banque:        c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><rect x="2" y="11" width="20" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+  'santé':       c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>,
+  droit:         c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  industrie:     c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><path d="M2 20h20M7 20V10l5-5 5 5v10M10 20v-5h4v5"/></svg>,
+  'ingénierie':  c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>,
+  rh:            c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  commerce:      c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
 };
 
-function getSectorIcon(sector, color = '#09090b') {
-  const name = (sector.name ?? '').toLowerCase();
-  for (const [key, fn] of Object.entries(SECTOR_ICONS)) {
-    if (name.includes(key)) return fn(color);
+function getSectorIcon(sector, color = G.ink) {
+  const n = (sector.name ?? '').toLowerCase();
+  for (const [k, fn] of Object.entries(ICONS)) {
+    if (n.includes(k)) return fn(color);
   }
-  return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="7" width="20" height="14" rx="2"/>
-      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-      <line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
-    </svg>
-  );
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>;
 }
 
-/* ══════════════════════════════════════════════
-   PALETTE SECTEUR — teintes très légères
-   L'accent indigo/amber reste réservé à l'UI globale.
-   Ici on utilise des teintes neutres par domaine.
-══════════════════════════════════════════════ */
-const SECTOR_ACCENTS = [
-  { keys: ['informatique','numérique','tech','digital'], hex: C.indigo,   tint: C.indigoLight },
-  { keys: ['finance','comptabilité','banque'],           hex: '#0D9488',  tint: '#F0FDFA'     },
-  { keys: ['santé','médical','soin'],                    hex: '#E11D48',  tint: '#FFF1F2'     },
-  { keys: ['droit','juridique','notaire'],               hex: C.amber,    tint: C.amberLight  },
-  { keys: ['marketing','communication','pub'],           hex: '#7C3AED',  tint: '#F5F3FF'     },
-  { keys: ['industrie','btp','construction','ingénierie'], hex: '#0284C7', tint: '#F0F9FF'    },
-  { keys: ['rh','ressources','humaines'],                hex: '#475569',  tint: '#F8FAFC'     },
-  { keys: ['commerce','vente','retail'],                 hex: '#EA580C',  tint: '#FFF7ED'     },
+/* â”€â”€ Per-sector accent palettes â”€â”€ */
+const ACCENTS = [
+  { keys: ['informatique','numérique','tech','digital'], hex:'#C9A84C', tint:'#FDFAF0' },
+  { keys: ['finance','comptabilité','banque'],           hex:'#0D9488', tint:'#F0FDFA' },
+  { keys: ['santé','médical','soin'],                    hex:'#E11D48', tint:'#FFF1F2' },
+  { keys: ['droit','juridique'],                         hex:'#7C3AED', tint:'#F5F3FF' },
+  { keys: ['marketing','communication'],                 hex:'#0284C7', tint:'#F0F9FF' },
+  { keys: ['industrie','btp','ingénierie'],              hex:'#EA580C', tint:'#FFF7ED' },
+  { keys: ['rh','ressources'],                           hex:'#475569', tint:'#F8FAFC' },
+  { keys: ['commerce','vente'],                          hex:'#A8892A', tint:'#FFFBEB' },
 ];
 
 function getAccent(sector) {
-  const name = (sector.name ?? '').toLowerCase();
-  for (const p of SECTOR_ACCENTS) {
-    if (p.keys.some((k) => name.includes(k))) return p;
+  const n = (sector.name ?? '').toLowerCase();
+  for (const p of ACCENTS) {
+    if (p.keys.some(k => n.includes(k))) return p;
   }
-  return { hex: '#52525B', tint: '#FAFAFA' };
+  return { hex: '#6B7280', tint: '#F9FAFB' };
 }
 
-/* ══════════════════════════════════════════════
-   SECTOR CARD
-══════════════════════════════════════════════ */
-function SectorCard({ sector, level, onApply }) {
-  const isFull   = (sector.remaining ?? 0) <= 0;
-  const isUrgent = !isFull && (sector.remaining ?? 0) <= 3;
-  const accent   = getAccent(sector);
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   STATUS CONFIG
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function getStatus(sector) {
+  const r = sector.remaining ?? 0;
+  if (r <= 0)   return { label: 'Complet',   dotColor: G.danger,  dotCls: '', pill: { bg: G.dangerBg, color: G.danger,  border: '#FECACA' }, barColor: G.danger,  isUrgent: false, isFull: true  };
+  if (r <= 3)   return { label: `${r} place${r > 1 ? 's' : ''}`, dotColor: G.amber, dotCls: 'urgent-ring', pill: { bg: G.amberBg, color: G.amber, border: '#FDE68A' }, barColor: G.amber, isUrgent: true, isFull: false };
+  return        { label: 'Disponible', dotColor: '#22C55E', dotCls: '', pill: { bg: G.successBg, color: G.success, border: '#BBF7D0' }, barColor: getAccent(sector).hex, isUrgent: false, isFull: false };
+}
 
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SECTOR CARD
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function SectorCard({ sector, level, onApply }) {
+  const accent  = getAccent(sector);
+  const status  = getStatus(sector);
   const fillPct = (sector.total ?? 0) > 0
-    ? Math.round(((sector.total - sector.remaining) / sector.total) * 100)
+    ? Math.round(((sector.total - (sector.remaining ?? 0)) / sector.total) * 100)
     : null;
 
-  const rootRef = useRef(null);
-  const onMove  = (e) => {
-    const el = rootRef.current; if (!el) return;
-    const r  = el.getBoundingClientRect();
-    el.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`);
-    el.style.setProperty('--my', `${((e.clientY - r.top)  / r.height) * 100}%`);
-  };
-
-  /* Status — couleurs système cohérentes */
-  const status = isFull
-    ? { label: 'Complet',   dot: '#F87171', pill: { bg: C.dangerLight, color: C.danger,  border: '#FECACA' }, bar: C.danger  }
-    : isUrgent
-      ? { label: `${sector.remaining} place${sector.remaining > 1 ? 's' : ''}`,
-          dot: C.amber, pill: { bg: C.amberLight, color: '#B45309', border: '#FDE68A' }, bar: C.amber,
-          dotCls: 'sc-dot-urgent' }
-      : { label: 'Disponible', dot: '#4ADE80', pill: { bg: C.successLight, color: C.success, border: '#BBF7D0' }, bar: accent.hex };
-
   return (
-    <article
-      ref={rootRef}
-      onMouseMove={onMove}
-      className={`sc-root${isFull ? ' sc-full opacity-50 pointer-events-none' : ''}`}
-    >
-      <div className="sc-card flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_14px_rgba(0,0,0,0.04)]">
+    <article className={`sc-wrap${status.isFull ? ' is-full' : ''}`} style={status.isFull ? { opacity: 0.52, pointerEvents: 'none' } : {}}>
+      <div className="sc-card" onClick={() => !status.isFull && onApply(sector)}>
 
-        {/* ── Header teinté ── */}
-        <div className="relative px-5 pt-5 pb-4"
-          style={{ background: accent.tint }}>
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-zinc-200/70" />
+        {/* â”€â”€ Tinted header â”€â”€ */}
+        <div className="relative px-5 pt-5 pb-4" style={{ background: accent.tint, borderBottom: `1px solid ${G.border}` }}>
+          {/* Top row: icon + pill */}
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'rgba(255,255,255,0.75)', border: `1px solid ${accent.hex}28`, backdropFilter: 'blur(4px)' }}>
+              {getSectorIcon(sector, accent.hex)}
+            </div>
 
-          <h2 className="text-[1rem] font-semibold text-zinc-900 leading-snug tracking-[-0.01em] whitespace-nowrap overflow-hidden text-ellipsis"
-            style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 shrink-0 text-[10px] font-bold uppercase tracking-[0.10em]"
+              style={{ background: status.pill.bg, color: status.pill.color, border: `1px solid ${status.pill.border}` }}>
+              <span className={`w-1.5 h-1.5 rounded-full ${status.dotCls}`} style={{ background: status.dotColor }} />
+              {status.label}
+            </span>
+          </div>
+
+          {/* Sector name */}
+          <h2 className="text-[15px] font-bold leading-snug tracking-tight text-gray-900"
+            style={{ fontFamily: 'var(--font-body)' }}>
             {sector.name}
           </h2>
         </div>
 
-        {/* -- Body -- */}
-        <div className="flex flex-col flex-1 px-5 pt-4 pb-5 bg-white">
+        {/* â”€â”€ Card body â”€â”€ */}
+        <div className="flex flex-col flex-1 px-5 pt-4 pb-5 gap-4">
 
-          {sector.domain && (
-            <p className="mb-4 text-[11px] text-zinc-400 font-medium">{sector.domain}</p>
-          )}
-
-          {/* Progress */}
+          {/* Progress bar */}
           {fillPct !== null && (
-            <div className="mb-4">
-              <div className="flex justify-between mb-1.5">
-                <span className="text-[11px] text-zinc-400 tabular-nums">
-                  {sector.total - sector.remaining} / {sector.total} places
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[10.5px] text-gray-400 font-medium">
+                  {sector.total - (sector.remaining ?? 0)} / {sector.total} places
                 </span>
-                <span className="text-[11px] font-semibold tabular-nums" style={{ color: status.bar }}>
+                <span className="text-[10.5px] font-bold" style={{ color: status.barColor }}>
                   {fillPct}%
                 </span>
               </div>
-              <div className="h-[3px] w-full rounded-full bg-zinc-100 overflow-hidden">
-                <div className="sc-bar-animated h-full rounded-full"
-                  style={{ '--bar-target': `${fillPct}%`, background: status.bar }} />
+              <div className="bar-track">
+                <div className="bar-fill" style={{ '--bw': `${fillPct}%`, background: status.barColor }} />
               </div>
             </div>
           )}
 
-          <div className="sc-divider mb-4" />
-
-          {/* Niveau — indigo accent quand actif */}
-          <div className="flex items-center gap-2 mb-4">
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1
-                             text-[10px] font-semibold uppercase tracking-[0.13em]
-                             border border-zinc-200 bg-zinc-50 text-zinc-500">
-              {level === 'Licence' ? (
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              ) : (
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-                </svg>
-              )}
+          {/* Level badge */}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] rounded-lg px-2.5 py-1 border"
+              style={{ background: G.offWhite, color: G.muted, borderColor: G.border }}>
+              {level === 'Licence'
+                ? <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                : <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              }
               {level}
             </span>
-            {level === 'Licence' && <span className="text-[10px] text-zinc-400">· Binôme requis</span>}
+            {level === 'Licence' && (
+              <span className="text-[10px]" style={{ color: G.muted }}>· Binôme requis</span>
+            )}
           </div>
 
+          {/* Divider */}
+          <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${G.border}, transparent)` }} />
+
           {/* CTA */}
-          {isFull ? (
-            <div className="w-full rounded-xl py-3 text-center text-[12px] font-medium text-zinc-300 bg-zinc-50 border border-zinc-100">
+          {status.isFull ? (
+            <div className="w-full rounded-xl py-3 text-center text-[11.5px] font-semibold text-gray-300"
+              style={{ background: '#F7F7F7', border: `1px solid #F0F0F0` }}>
               Section complète
             </div>
           ) : (
             <button
-              onClick={() => onApply(sector)}
-              className="sc-cta w-full text-[13px] flex items-center justify-center gap-2"
+              onClick={e => { e.stopPropagation(); onApply(sector); }}
+              className="sc-btn sc-btn-gold"
             >
-              <span className="relative z-10 flex items-center gap-2">
-                Postuler
-                <svg className="sc-cta-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                  <polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </span>
+              Postuler
+              <svg className="arr" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
             </button>
           )}
         </div>
 
-        {/* Accent line bas — couleur secteur */}
-        <div className="absolute bottom-0 left-5 right-5 h-[2px] rounded-full opacity-0 transition-opacity duration-300"
-          style={{ background: accent.hex }} data-accent-line />
+        {/* Bottom accent line revealed on hover */}
+        <div className="absolute bottom-0 left-5 right-5 h-[2px] rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{ background: `linear-gradient(90deg, ${accent.hex}, ${accent.hex}66)` }} />
       </div>
     </article>
   );
 }
 
-/* ══════════════════════════════════════════════
-   TOAST — indigo
-══════════════════════════════════════════════ */
-function Toast({ toasts, remove }) {
-  return (
-    <div className="fixed bottom-3 left-3 right-3 sm:bottom-6 sm:right-6 sm:left-auto z-50 flex flex-col gap-2.5 pointer-events-none">
-      {toasts.map((t) => (
-        <div key={t.id}
-          className="toast-in pointer-events-auto flex items-center gap-3
-                     pl-3.5 pr-3 py-3 rounded-2xl max-w-full sm:max-w-[340px]
-                     border text-sm font-medium leading-snug"
-          style={{
-            background: '#ffffff',
-            color: '#111111',
-            border: '1px solid #E5E5E5',
-            boxShadow: '0 10px 26px rgba(0,0,0,0.10)',
-            fontFamily: 'DM Sans, system-ui, sans-serif',
-          }}>
-          {t.icon && (
-            <span
-              className="shrink-0 w-7 h-7 rounded-lg grid place-items-center text-[13px]"
-              style={{ background: '#EEF2FF', color: '#4F46E5' }}
-            >
-              {t.icon}
-            </span>
-          )}
-          <span className="flex-1">{t.message}</span>
-          <button onClick={() => remove(t.id)}
-            className="shrink-0 p-1 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════
-   SEARCH BAR — focus ring indigo
-══════════════════════════════════════════════ */
-function SearchBar({ value, onChange }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    const h = (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); ref.current?.focus(); } };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, []);
-  return (
-    <div className="relative group w-full sm:w-auto" style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-      <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-700 transition-colors duration-300"
-        width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input
-        ref={ref} type="text" value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Rechercher..."
-        className="ctrl-search w-full sm:w-48 pl-9 pr-12 py-2.5 bg-white border border-[#E5E5E5] rounded-[10px]
-                   text-sm text-zinc-900 placeholder:text-zinc-400"
-      />
-      {value ? (
-        <button onClick={() => onChange('')}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 transition-colors duration-300 p-0.5">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      ) : (
-        <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none
-                        text-[9px] text-zinc-300 bg-[#FAFAF8] border border-[#E5E5E5]
-                        rounded px-1.5 py-0.5 font-mono select-none">Ctrl+K</kbd>
-      )}
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════
-   STEPPER — actif en indigo
-══════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   STEPPER
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function Stepper({ step }) {
   const steps = ['Choisir un secteur', 'Remplir le dossier', 'Confirmation'];
   return (
-    <div className="flex items-center justify-center flex-wrap gap-y-3" style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+    <div className="flex items-center justify-center flex-wrap gap-y-3" style={{ fontFamily: 'var(--font-body)' }}>
       {steps.map((label, i) => {
         const id = i + 1;
         const done = id < step;
-        const current = id === step;
+        const cur  = id === step;
         return (
           <div key={id} className="flex items-center">
             <div className="flex flex-col items-center gap-1.5">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all duration-400 bg-white"
-                style={{ borderColor: C.indigo, color: C.indigo }}
-              >
-                {id}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all duration-300
+                ${cur ? 'step-cur' : done ? 'step-done' : 'bg-white border-gray-200 text-gray-400'}`}>
+                {done
+                  ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  : id}
               </div>
-              <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-center w-[78px] sm:w-auto whitespace-normal sm:whitespace-nowrap text-zinc-600">
-                {label}
-              </span>
+              <span className={`text-[10px] font-semibold uppercase tracking-wider text-center w-20 sm:w-auto
+                ${cur ? 'text-gray-900' : 'text-gray-400'}`}>{label}</span>
             </div>
             {i < steps.length - 1 && (
-              <div className="hidden sm:block w-20 sm:w-28 h-px mx-3 mb-4 rounded-full transition-all duration-700"
-                style={{ background: done ? C.indigo : '#e4e4e7' }} />
+              <div className="hidden sm:block w-16 sm:w-24 h-px mx-3 mb-4 rounded-full transition-all duration-700"
+                style={{ background: done ? G.gold : G.border }} />
             )}
           </div>
         );
@@ -525,9 +415,9 @@ function Stepper({ step }) {
   );
 }
 
-/* ══════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ANIMATED NUMBER
-══════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function Num({ value }) {
   const [n, setN] = useState(0);
   useEffect(() => {
@@ -543,328 +433,342 @@ function Num({ value }) {
   return <>{n}</>;
 }
 
-/* ══════════════════════════════════════════════
-   STATS BAR — icônes indigo/amber
-══════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   STATS BAR
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function StatsBar({ sectors }) {
-  const getR = (s) => s.remaining ?? s.available ?? s.left ?? null;
-  const getT = (s) => s.total ?? s.capacity ?? s.spots ?? null;
-
-  const hasData = sectors.some((s) => getT(s) !== null);
+  const getR = s => s.remaining ?? s.available ?? null;
+  const getT = s => s.total ?? s.capacity ?? null;
+  const hasData   = sectors.some(s => getT(s) !== null);
   const totPlaces = sectors.reduce((a, s) => a + (getT(s) ?? 0), 0);
-  const totRem = sectors.reduce((a, s) => a + (getR(s) ?? 0), 0);
-  const pct = totPlaces > 0 ? Math.round(((totPlaces - totRem) / totPlaces) * 100) : 0;
-  const open = sectors.filter((s) => { const r = getR(s); return r === null || r > 0; }).length;
+  const totRem    = sectors.reduce((a, s) => a + (getR(s) ?? 0), 0);
+  const open      = sectors.filter(s => { const r = getR(s); return r === null || r > 0; }).length;
 
-  const [bar, setBar] = useState(0);
-  useEffect(() => {
-    if (!hasData) return;
-    const t = setTimeout(() => setBar(pct), 350);
-    return () => clearTimeout(t);
-  }, [pct, hasData]);
-
-  const cells = [
-    {
-      key: 'open', always: true, val: open, label: 'SECTEURS OUVERTS',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F343A" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-        </svg>
-      ),
-    },
-    {
-      key: 'rem', always: false, val: totRem, label: 'PLACES RESTANTES',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F343A" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-      ),
-    },
-    {
-      key: 'tot', always: false, val: totPlaces, label: 'PLACES AU TOTAL',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F343A" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-          <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-        </svg>
-      ),
-    },
+  const stats = [
+    { value: open,      label: 'Secteurs ouverts',  always: true,
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={G.gold} strokeWidth="1.7" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> },
+    { value: totRem,    label: 'Places restantes',   always: false,
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={G.gold} strokeWidth="1.7" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+    { value: totPlaces, label: 'Places au total',    always: false,
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={G.gold} strokeWidth="1.7" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> },
   ];
 
   return (
-    <div className="mb-14 rounded-xl overflow-hidden border border-[#E5E5E5] bg-[#FAFAF8] shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
-      style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E5E5E5]">
-        {cells.map(({ key, always, val, label, icon }) => (
-          <div key={key} className="flex flex-col items-center justify-center gap-4 py-10 sm:py-12 px-8 sm:px-10">
-            <div className="text-[#2F343A]">{icon}</div>
-            <p className="relative -top-[1px] text-[48px] font-medium text-[#111111] leading-none text-center"
-              style={{ fontFamily: 'Cormorant Garamond, serif', letterSpacing: '-1px', fontVariantNumeric: 'lining-nums tabular-nums' }}>
-              {always || hasData ? <Num value={val} /> : <span className="text-zinc-300 text-3xl">-</span>}
-            </p>
-            <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#6B7280] text-center"
-              style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-              {label}
-            </p>
+    <div className="mb-10 rounded-2xl overflow-hidden border"
+      style={{ borderColor: G.border, background: G.white, boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E8E4DC]">
+        {stats.map(({ value, label, icon, always }, i) => (
+          <div key={i} className="stat-card flex flex-col sm:flex-row items-center gap-4 py-7 px-6 sm:px-8 cursor-default"
+            style={{ borderColor: G.border }}>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.18)' }}>
+              {icon}
+            </div>
+            <div className="text-center sm:text-left">
+              <p className="leading-none mb-1 font-light" style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', color: G.ink, letterSpacing: '-1px' }}>
+                {always || hasData ? <Num value={value} /> : <span style={{ color: '#E0E0E0', fontSize: '1.8rem' }}>—</span>}
+              </p>
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.18em]" style={{ color: G.muted }}>
+                {label}
+              </p>
+            </div>
           </div>
         ))}
       </div>
-
     </div>
   );
 }
 
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SEARCH BAR
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function SearchBar({ value, onChange }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const h = e => { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); ref.current?.focus(); } };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, []);
+
+  return (
+    <div className="relative w-full sm:w-auto">
+      <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
+        width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        ref={ref} type="text" value={value} onChange={e => onChange(e.target.value)}
+        placeholder="Rechercher un secteur..."
+        className="ds-search w-full sm:w-52 pl-9 pr-10 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 rounded-xl"
+        style={{ border: `1.5px solid ${G.border}`, background: G.white, fontFamily: 'var(--font-body)' }}
+      />
+      {value ? (
+        <button onClick={() => onChange('')}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-700 transition-colors">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      ) : (
+        <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-gray-300 pointer-events-none bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 font-mono">
+          Ctrl+K
+        </kbd>
+      )}
+    </div>
+  );
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SORT MENU
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const SORT_OPTIONS = [
-  { value: 'default', label: 'Par defaut' },
-  { value: 'places', label: 'Plus de places' },
-  { value: 'alpha', label: 'Alphabetique' },
+  { value: 'default', label: 'Par défaut' },
+  { value: 'places',  label: 'Plus de places' },
+  { value: 'alpha',   label: 'Alphabétique' },
 ];
 
 function SortMenu({ value, onChange }) {
   const [open, setOpen] = useState(false);
-  const current = SORT_OPTIONS.find((opt) => opt.value === value) ?? SORT_OPTIONS[0];
-
-  const selectValue = (next) => {
-    onChange(next);
-    setOpen(false);
-  };
-
+  const cur = SORT_OPTIONS.find(o => o.value === value) ?? SORT_OPTIONS[0];
   return (
-    <div className="relative shrink-0 w-full sm:w-auto" style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="inst-select w-full sm:w-[190px] flex items-center justify-between gap-2 px-4 py-2.5 rounded-[10px]
-                   text-sm font-medium"
-      >
-        <span>{current.label}</span>
-        <svg
-          width="11"
-          height="11"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
-        >
-          <polyline points="6 9 12 15 18 9" />
+    <div className="relative w-full sm:w-auto" style={{ fontFamily: 'var(--font-body)' }}>
+      <button type="button" onClick={() => setOpen(p => !p)}
+        className="sort-btn w-full sm:w-[165px] flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-transparent">
+        {cur.label}
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+          className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+          <polyline points="6 9 12 15 18 9"/>
         </svg>
       </button>
-
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-2 z-50 w-full sm:w-[220px] bg-white border border-[#E5E5E5] rounded-[10px]
-                          shadow-[0_10px_24px_rgba(0,0,0,0.06)] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#E5E5E5]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">TRI</p>
+          <div className="absolute top-full left-0 mt-2 z-50 w-full sm:w-[185px] bg-white rounded-xl overflow-hidden"
+            style={{ border: `1px solid ${G.border}`, boxShadow: '0 10px 26px rgba(0,0,0,0.08)' }}>
+            <div className="px-4 py-2.5 border-b" style={{ borderColor: G.border }}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Trier par</p>
             </div>
-            <div className="py-1">
-              {SORT_OPTIONS.map((opt) => {
-                const active = value === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => selectValue(opt.value)}
-                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-300 ${
-                      active ? 'bg-[#F5F5F2] text-[#111111] font-medium' : 'text-zinc-700 hover:bg-[#F8F8F6]'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
+            {SORT_OPTIONS.map(opt => (
+              <button key={opt.value} type="button" onClick={() => { onChange(opt.value); setOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 hover:bg-amber-50"
+                style={{ color: value === opt.value ? G.goldDark : '#374151', fontWeight: value === opt.value ? '700' : '400', background: value === opt.value ? 'rgba(201,168,76,0.07)' : 'transparent' }}>
+                {opt.label}
+              </button>
+            ))}
           </div>
         </>
       )}
     </div>
   );
 }
-function GlowCursor() {
-  const r = useRef(null);
-  useEffect(() => {
-    const fn = (e) => { if (r.current) { r.current.style.left = e.clientX+'px'; r.current.style.top = e.clientY+'px'; } };
-    window.addEventListener('mousemove', fn, { passive: true });
-    return () => window.removeEventListener('mousemove', fn);
-  }, []);
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   TOAST
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function Toast({ toasts, remove }) {
   return (
-    <div ref={r} style={{
-      position:'fixed', width:480, height:480, borderRadius:'50%',
-      background:`radial-gradient(circle,rgba(99,102,241,0.03) 0%,transparent 65%)`,
-      pointerEvents:'none', transform:'translate(-50%,-50%)', zIndex:1,
-    }} />
+    <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-50 flex flex-col gap-2 pointer-events-none">
+      {toasts.map(t => (
+        <div key={t.id}
+          className="a-toast pointer-events-auto flex items-center gap-3 pl-4 pr-3 py-3 rounded-2xl max-w-full sm:max-w-[310px] text-sm font-medium"
+          style={{ background: G.white, color: G.ink, border: `1px solid ${G.border}`, boxShadow: '0 10px 28px rgba(0,0,0,0.10)', fontFamily: 'var(--font-body)' }}>
+          {t.icon && (
+            <span className="shrink-0 w-7 h-7 rounded-lg grid place-items-center text-base"
+              style={{ background: 'rgba(201,168,76,0.10)', color: G.goldDark }}>{t.icon}</span>
+          )}
+          <span className="flex-1">{t.message}</span>
+          <button onClick={() => remove(t.id)}
+            className="shrink-0 p-1 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      ))}
+    </div>
   );
 }
 
-/* ══════════════════════════════════════════════
-   PAGE PRINCIPALE — DemandeStage
-══════════════════════════════════════════════ */
-const DOMAIN_KEYWORDS = {
-  tech: ['informatique', 'developpement', 'numerique', 'tech', 'digital'],
-  finance: ['finance', 'comptabilite', 'banque'],
-  sante: ['sante', 'medical', 'soin'],
-  droit: ['droit', 'juridique', 'notaire'],
-  marketing: ['marketing', 'communication', 'pub'],
-  industrie: ['industrie', 'ingenierie', 'btp', 'construction'],
-};
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   UTILS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+const stripAccents = (v = '') => v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-const stripAccents = (value = '') =>
-  value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const DOMAIN_KEYWORDS = {
+  tech:      ['informatique','developpement','numerique','tech','digital'],
+  finance:   ['finance','comptabilite','banque'],
+  sante:     ['sante','medical','soin'],
+  droit:     ['droit','juridique','notaire'],
+  marketing: ['marketing','communication','pub'],
+  industrie: ['industrie','ingenierie','btp','construction'],
+};
 
 function matchStatus(sector, statuses = []) {
   if (!statuses.length) return true;
-  const remaining = sector.remaining ?? 0;
-
-  return statuses.some((status) => {
-    if (status === 'disponible') return remaining > 0;
-    if (status === 'urgent') return remaining > 0 && remaining <= 3;
-    if (status === 'complet') return remaining <= 0;
-    return false;
-  });
+  const r = sector.remaining ?? 0;
+  return statuses.some(s =>
+    (s === 'disponible' && r > 0) ||
+    (s === 'urgent'     && r > 0 && r <= 3) ||
+    (s === 'complet'    && r <= 0)
+  );
 }
 
 function matchDomain(sector, domains = []) {
   if (!domains.length) return true;
-  const haystack = stripAccents(sector.name ?? '');
-
-  return domains.some((domain) => {
-    const keywords = DOMAIN_KEYWORDS[domain] ?? [];
-    return keywords.some((keyword) => haystack.includes(keyword));
-  });
+  const h = stripAccents(sector.name ?? '');
+  return domains.some(d => (DOMAIN_KEYWORDS[d] ?? []).some(k => h.includes(k)));
 }
 
+function readJson(key, fallback) {
+  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) ?? fallback : fallback; }
+  catch { return fallback; }
+}
+
+const UI_KEY   = 'find:demande-stage:ui:v1';
+const DATA_KEY = 'find:demande-stage:data:v1';
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MAIN PAGE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 export default function DemandeStage() {
   const navigate = useNavigate();
   const { setSectorAndModality } = useApplication();
 
-  const [level, setLevel]     = useState('Licence');
-  const [data, setdata] = useState([]);
-  const [filters, setFilters] = useState({ niveau: ['Licence'], statut: [], domaine: [] });
-  const [search, setSearch]   = useState('');
-  const [sortBy, setSortBy]   = useState('default');
-  const [isLoading, setIsLoading] = useState(true);
-  const [visible, setVisible] = useState(false);
-  const [toasts, setToasts]   = useState([]);
+  const pUi   = readJson(UI_KEY, null);
+  const pData = readJson(DATA_KEY, []);
+
+  const [level,    setLevel]    = useState(pUi?.level ?? 'Licence');
+  const [data,     setData]     = useState(Array.isArray(pData) ? pData : []);
+  const [filters,  setFilters]  = useState(pUi?.filters ?? { niveau: ['Licence'], statut: [], domaine: [] });
+  const [search,   setSearch]   = useState(pUi?.search ?? '');
+  const [sortBy,   setSortBy]   = useState(pUi?.sortBy ?? 'default');
+  const [loading,  setLoading]  = useState(true);
+  const [apiError, setApiError] = useState('');
+  const [visible,  setVisible]  = useState(false);
+  const [toasts,   setToasts]   = useState([]);
   const tid = useRef(0);
 
   useEffect(() => {
-    const t = setTimeout(() => { setIsLoading(false); setVisible(true); }, 900);
+    const t = setTimeout(() => { setLoading(false); setVisible(true); }, 900);
     return () => clearTimeout(t);
   }, []);
 
   const addToast = useCallback((message, icon = '✨') => {
     const id = ++tid.current;
-    setToasts((p) => [...p, { id, message, icon }]);
-    setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 4200);
+    setToasts(p => [...p, { id, message, icon }]);
+    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4200);
   }, []);
-  const removeToast = useCallback((id) => setToasts((p) => p.filter((t) => t.id !== id)), []);
+  const removeToast = useCallback(id => setToasts(p => p.filter(t => t.id !== id)), []);
 
-  const handleApply = (sector) => {
+  const handleApply = sector => {
     if ((sector.remaining ?? 0) <= 0) { addToast('Ce secteur est complet.', '⚠️'); return; }
     setSectorAndModality(sector, level);
-    addToast(`Candidature "${sector.name}" démarrée.`, '');
+    addToast(`Candidature "${sector.name}".`, '');
     setTimeout(() => navigate('/formulaire'), 550);
   };
-  const handleLevel = (v) => {
+
+  const handleLevel = v => {
     setLevel(v);
     addToast(v === 'Licence' ? 'Mode binôme activé.' : 'Mode individuel activé.', '🔄');
   };
 
-  const handleFiltersChange = useCallback((next) => {
+  const handleFiltersChange = useCallback(next => {
     setFilters(next);
-    const nextLevel = next?.niveau?.[0];
-    if (nextLevel && nextLevel !== level) {
-      setLevel(nextLevel);
-    }
+    const nl = next?.niveau?.[0];
+    if (nl && nl !== level) setLevel(nl);
   }, [level]);
-  
-  useEffect(()=>{
 
-   (async () => {
-    const sectors = await getSectors(); 
-    setdata(sectors.map(item=>{
-  return {
-    id : item.id ?? item._id ?? null,
-    name: item.name,
-    description: item.description,
-    domain: item.name,
-    remaining: item.available_slots,
-    total: item.total_slots,
-  }
-}) ?? []);
-  })().catch(console.error);
-  
-},[])
+  useEffect(() => {
+    try { localStorage.setItem(UI_KEY, JSON.stringify({ level, filters, search, sortBy, updatedAt: Date.now() })); }
+    catch {}
+  }, [level, filters, search, sortBy]);
 
-const sectors = data
-  .filter((s) =>
-    !search
-    || stripAccents(s.name ?? '').includes(stripAccents(search))
-    || stripAccents(s.description ?? '').includes(stripAccents(search))
-  )
-  .filter((s) => matchStatus(s, filters.statut))
-  .filter((s) => matchDomain(s, filters.domaine))
-  .sort((a, b) => {
-    if (sortBy === 'places') return (b.remaining ?? 0) - (a.remaining ?? 0);
-    if (sortBy === 'alpha')  return (a.name ?? '').localeCompare(b.name ?? '');
-    return 0;
-  });
-  
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setApiError('');
+      const response = await getSectors();
+      const sectors  = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : [];
+      if (cancelled) return;
+      const mapped = sectors.map(item => ({
+        id: item.id ?? item._id ?? null,
+        name: item.name,
+        description: item.description,
+        domain: item.name,
+        remaining: item.available_slots ?? 0,
+        total: item.total_slots ?? 0,
+      }));
+      setData(mapped);
+      try { localStorage.setItem(DATA_KEY, JSON.stringify(mapped)); } catch {}
+    })().catch(err => {
+      if (cancelled) return;
+      setApiError(err?.message || 'Erreur API inconnue');
+      const cached = readJson(DATA_KEY, []);
+      if (Array.isArray(cached) && cached.length > 0) setData(cached);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const sectors = data
+    .filter(s => !search || stripAccents(s.name ?? '').includes(stripAccents(search)) || stripAccents(s.description ?? '').includes(stripAccents(search)))
+    .filter(s => matchStatus(s, filters.statut))
+    .filter(s => matchDomain(s, filters.domaine))
+    .sort((a, b) => {
+      if (sortBy === 'places') return (b.remaining ?? 0) - (a.remaining ?? 0);
+      if (sortBy === 'alpha')  return (a.name ?? '').localeCompare(b.name ?? '');
+      return 0;
+    });
 
   return (
     <>
       <style>{STYLES}</style>
-      <GlowCursor />
 
-      <div className="grain min-h-screen bg-white flex flex-col"
-        style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+      <div className="ds-root">
         <Navbar />
 
-        <main className="flex-1 relative z-10">
+        <main className="flex-1 pt-[72px] md:pt-[80px]">
 
-          {/* ══ HERO ══ */}
-          <div className="hero-bg border-b border-zinc-100 pt-10 sm:pt-14 pb-10 sm:pb-12 px-4 sm:px-6">
-            <div className="max-w-[1120px] mx-auto space-y-6 sm:space-y-8">
+          {/* â•â• HERO â•â• */}
+          <div className="border-b pt-12 sm:pt-16 pb-10 sm:pb-12 px-4 sm:px-6"
+            style={{ borderColor: G.border, background: 'linear-gradient(180deg, #FDFCF8 0%, #F9F7F1 100%)' }}>
+            <div className="max-w-5xl mx-auto space-y-6">
 
-              {/* Live pill — indigo */}
-              <div className="flex justify-center hero-in">
-                <div className="inline-flex items-center gap-2.5 rounded-full px-4 py-1.5
-                                border border-zinc-200 bg-white shadow-sm">
-                  <span className="live-dot w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ background: C.indigo }} />
-                  <span className="text-[10px] sm:text-[11px] font-semibold tracking-[0.14em] uppercase text-zinc-500 text-center">
+              {/* Live badge */}
+              <div className="flex justify-center au1">
+                <div className="inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 bg-white border"
+                  style={{ borderColor: G.border, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                  <span className="g-dot w-1.5 h-1.5 rounded-full shrink-0" style={{ background: G.gold }} />
+                  <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.18em] uppercase"
+                    style={{ color: G.muted, fontFamily: 'var(--font-body)' }}>
                     Réservations ouvertes · Promo 2026
                   </span>
                 </div>
               </div>
 
               {/* Stepper */}
-              <div className="hero-in d1"><Stepper step={1} /></div>
+              <div className="au2"><Stepper step={1} /></div>
 
-              {/* Headline — underline indigo */}
-              <div className="text-center hero-in d2">
-                <h1 className="text-[clamp(2.4rem,5.5vw,4.2rem)] font-black tracking-tight leading-[1.05] text-zinc-950 mb-4"
-                  style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
-                  Trouvez votre{' '}
-                  <em className="not-italic inline-block">
-                    Opportunité
-                  </em>
+              {/* Headline */}
+              <div className="text-center au3">
+                <h1 className="font-light leading-[1.06] mb-3 tracking-tight"
+                  style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.4rem, 5.5vw, 4rem)', color: G.ink }}>
+                  Choisissez votre{' '}
+                  <em className="gold-shimmer not-italic font-semibold">secteur de stage</em>
                 </h1>
-                <p className="text-zinc-400 text-[1.02rem] max-w-md mx-auto leading-relaxed font-normal">
+                <p className="text-sm sm:text-base text-gray-500 max-w-[400px] mx-auto leading-relaxed">
                   Stage académique 2026 — sélectionnez un secteur et déposez votre candidature.
                 </p>
+                <div className="flex justify-center mt-4">
+                  <span className="accent-line" style={{ width: 48 }} />
+                </div>
               </div>
 
-              {/* Chip niveau — indigo si actif */}
-              <div className="flex justify-center hero-in d3">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-all duration-200 text-center"
+              {/* Level indicator */}
+              <div className="flex justify-center au4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border"
                   style={level === 'Licence'
-                    ? { background: C.indigo, color: C.white, borderColor: C.indigo }
-                    : { background: C.white, color: '#71717A', borderColor: '#E4E4E7' }}>
+                    ? { background: 'rgba(201,168,76,0.09)', color: G.goldDark, borderColor: 'rgba(201,168,76,0.22)', fontFamily: 'var(--font-body)' }
+                    : { background: G.white, color: G.muted, borderColor: G.border, fontFamily: 'var(--font-body)' }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                     <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
@@ -874,17 +778,17 @@ const sectors = data
             </div>
           </div>
 
-          {/* ══ CONTENU ══ */}
-          <div className="max-w-[1120px] mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-16 sm:pb-24">
+          {/* â•â• CONTENT â•â• */}
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-20">
 
-            {!isLoading && <StatsBar sectors={data} />}
+            {/* Stats */}
+            {!loading && <StatsBar sectors={data} />}
 
-            {/* ── Barre de contrôle sticky ── */}
-            <div className="hero-in d4 sticky top-2 sm:top-3 z-30 mb-10 sm:mb-12
-                            flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center
-                            bg-[#FAFAF8]/95 backdrop-blur-xl border border-[#E5E5E5] rounded-xl
-                            px-4 sm:px-5 py-3.5
-                            shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+            {/* Control bar */}
+            <div className="ctrl-bar au5 sticky top-[76px] md:top-[86px] z-30 mb-8
+                            flex flex-col sm:flex-row gap-3 items-stretch sm:items-center
+                            rounded-2xl border px-4 sm:px-5 py-3.5"
+              style={{ borderColor: G.border, boxShadow: '0 2px 14px rgba(0,0,0,0.05)' }}>
               <div className="flex-1 min-w-0">
                 <Filters
                   level={level}
@@ -894,84 +798,73 @@ const sectors = data
                   totalCount={data.length}
                 />
               </div>
-
-              <div className="hidden sm:block self-stretch w-px bg-[#E5E5E5] my-1" />
-
+              <div className="hidden sm:block self-stretch w-px my-1" style={{ background: G.border }} />
               <SearchBar value={search} onChange={setSearch} />
-
               <SortMenu value={sortBy} onChange={setSortBy} />
-
-
-                            {/* Bouton certifie institutionnel */}
-              <button
-                type="button"
-                className="certified-btn hidden lg:flex shrink-0 items-center gap-1.5 px-4 py-2.5 rounded-[10px]
-                              text-[11px] font-semibold tracking-[0.04em]"
-                style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="8.5" cy="7" r="4"/>
-                  <polyline points="17 11 19 13 23 9"/>
-                </svg>
-                Places certifiees
-              </button>
             </div>
 
-            {/* Compteur */}
-            {!isLoading && search && (
-              <p className="text-sm text-zinc-400 mb-7">
+            {/* Result count */}
+            {!loading && search && (
+              <p className="text-sm text-gray-400 mb-6" style={{ fontFamily: 'var(--font-body)' }}>
                 {sectors.length === 0
-                  ? <>Aucun résultat pour <strong className="text-zinc-800">"{search}"</strong></>
-                  : <><strong className="text-zinc-800">{sectors.length}</strong> secteur{sectors.length > 1 ? 's' : ''} pour <strong className="text-zinc-800">"{search}"</strong></>}
+                  ? <>Aucun résultat pour <strong className="text-gray-700">"{search}"</strong></>
+                  : <><strong className="text-gray-700">{sectors.length}</strong> secteur{sectors.length > 1 ? 's' : ''} trouvé{sectors.length > 1 ? 's' : ''}</>}
               </p>
             )}
 
+            {/* API Error */}
+            {!loading && apiError && (
+              <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                style={{ fontFamily: 'var(--font-body)' }}>
+                Erreur de connexion : {apiError}
+              </div>
+            )}
+
             {/* Skeletons */}
-            {isLoading && (
+            {loading && (
               <div>
-                <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+                <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="skel h-[230px]" style={{ animationDelay: `${i * 0.07}s` }} />
+                    <div key={i} className="skel h-[240px]" style={{ animationDelay: `${i * 0.07}s` }} />
                   ))}
                 </div>
-                <div className="flex items-center justify-center gap-2.5 mt-8 text-zinc-400 text-sm font-medium">
-                  <span className="spin w-4 h-4 rounded-full border-2 border-zinc-200 border-t-zinc-500 inline-block"
-                    style={{ borderTopColor: C.indigo }} />
-                  Chargement des offres…
+                <div className="flex items-center justify-center gap-2.5 mt-8 text-gray-400 text-sm">
+                  <span className="a-spin w-4 h-4 rounded-full border-2 border-gray-200 inline-block"
+                    style={{ borderTopColor: G.gold }} />
+                  Chargement des offres...
                 </div>
               </div>
             )}
 
-            {/* Grille */}
-            {!isLoading && sectors.length > 0 && (
-              <div className={`grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]
-                              transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}>
+            {/* Cards grid */}
+            {!loading && sectors.length > 0 && (
+              <div className={`grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))] transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}>
                 {sectors.map((sector, i) => (
-                  <div key={sector.id} className="card-entry" style={{ animationDelay: `${i * 0.05}s` }}>
+                  <div key={sector.id ?? i} className="a-card" style={{ animationDelay: `${i * 0.05}s` }}>
                     <SectorCard sector={sector} level={level} onApply={handleApply} />
                   </div>
                 ))}
               </div>
-            )}    
+            )}
 
-            {/* État vide */}
-            {!isLoading && sectors.length === 0 && (
-              <div className="flex flex-col items-center text-center py-24 px-8
-                              border-2 border-dashed border-zinc-100 rounded-2xl bg-zinc-50/40">
-                <div className="w-14 h-14 bg-zinc-100 rounded-2xl flex items-center justify-center mb-5 text-2xl">
+            {/* Empty state */}
+            {!loading && sectors.length === 0 && (
+              <div className="flex flex-col items-center text-center py-20 px-8 rounded-2xl border-2 border-dashed"
+                style={{ borderColor: G.border, background: 'rgba(249,248,245,0.6)' }}>
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 text-2xl"
+                  style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.15)' }}>
                   {search ? '🔍' : '📭'}
                 </div>
-                <h3 className="text-lg font-bold text-zinc-900 mb-1.5"
-                  style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
+                <h3 className="text-lg font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: G.ink, fontSize: '1.4rem' }}>
                   {search ? 'Aucun résultat' : 'Aucune place disponible'}
                 </h3>
-                <p className="text-zinc-400 text-sm max-w-[260px] leading-relaxed mb-5">
+                <p className="text-gray-400 text-sm max-w-[260px] leading-relaxed mb-6">
                   {search ? `Aucun secteur ne correspond à "${search}".` : 'Tous les quotas sont remplis. Revenez bientôt.'}
                 </p>
                 {search && (
                   <button onClick={() => setSearch('')}
-                    className="text-sm font-semibold px-5 py-2.5 rounded-xl text-white transition-opacity hover:opacity-90"
-                    style={{ background: C.indigo }}>
+                    className="text-[12.5px] font-bold px-6 py-2.5 rounded-xl text-white"
+                    style={{ background: `linear-gradient(135deg, ${G.gold}, ${G.goldDark})`, fontFamily: 'var(--font-body)', letterSpacing: '.05em', textTransform: 'uppercase', boxShadow: '0 4px 16px rgba(201,168,76,0.28)' }}>
                     Effacer la recherche
                   </button>
                 )}
@@ -987,14 +880,3 @@ const sectors = data
     </>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

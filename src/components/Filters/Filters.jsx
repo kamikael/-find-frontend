@@ -1,169 +1,281 @@
 ﻿import { useState, useCallback, useEffect } from 'react';
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 
   :root {
-    --font-sans: 'DM Sans', system-ui, sans-serif;
-    --ink: #111111;
-    --soft-bg: #FAFAF8;
-    --line: #E5E5E5;
-    --accent: #111111;
-    --accent-strong: #111111;
+    --gold:        #C9A84C;
+    --gold-light:  #E8C96A;
+    --gold-dim:    rgba(201,168,76,0.12);
+    --gold-border: rgba(201,168,76,0.28);
+    --ink:         #0C0C0C;
+    --ink-80:      rgba(12,12,12,0.80);
+    --white:       #FFFFFF;
+    --off-white:   #F9F8F5;
+    --border:      rgba(12,12,12,0.10);
+    --muted:       #8A8680;
+    --font:        'Outfit', sans-serif;
+    --mono:        'DM Mono', monospace;
   }
 
-  .level-toggle {
-    background: var(--soft-bg);
-    border: 1px solid var(--line);
-    border-radius: 10px;
+  /* ── Level Toggle ── */
+  .lvl-wrap {
+    display: inline-flex;
+    background: var(--off-white);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
     padding: 4px;
+    gap: 3px;
   }
-  .level-btn {
-    transition: background .3s ease, color .3s ease, border-color .3s ease;
-  }
-  .level-btn.level-btn--active {
-    background: #6366F1 !important;
-    color: #ffffff !important;
-    border-color: #6366F1 !important;
-  }
-  .level-btn:not(.level-btn--active) {
-    background: transparent !important;
-    color: #6366F1 !important;
-    border-color: #6366F1 !important;
-  }
-  .level-btn:not(.level-btn--active):hover {
-    background: #6366F1 !important;
-    color: #ffffff !important;
-    border-color: #6366F1 !important;
-  }
-
-  .filter-btn {
-    background: transparent !important;
-    border: 1.5px solid var(--accent) !important;
-    color: var(--accent) !important;
-    letter-spacing: .02em;
-    transition: all .3s ease;
-  }
-  .filter-btn:hover:not(.filter-btn--active) {
-    background: var(--accent) !important;
-    color: #ffffff !important;
-    border-color: var(--accent) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
-  }
-  .filter-btn--active {
-    background: var(--accent) !important;
-    color: #ffffff !important;
-    border-color: var(--accent) !important;
-  }
-  .filter-btn:active {
-    transform: scale(.98);
-  }
-
-  .clear-btn { transition: color .3s ease, opacity .3s ease; }
-  .clear-btn:hover { color: var(--ink); opacity: .95; }
-
-  .filter-divider {
-    width: 1px;
-    background: var(--line);
-    align-self: stretch;
-    margin: 0 6px;
-  }
-
-  @keyframes dropIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .drop-in { animation: dropIn .3s ease both; }
-
-  .dropdown-shell {
-    border: 1px solid var(--line);
+  .lvl-btn {
+    font-family: var(--font);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 18px;
     border-radius: 10px;
-    box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.22,1,0.36,1);
+    white-space: nowrap;
+  }
+  .lvl-btn--off {
+    background: transparent;
+    color: var(--muted);
+  }
+  .lvl-btn--off:hover {
+    color: var(--ink);
+    background: rgba(12,12,12,0.04);
+  }
+  .lvl-btn--on {
+    background: var(--ink);
+    color: var(--white);
+    border-color: var(--ink);
+    box-shadow: 0 3px 12px rgba(12,12,12,0.22), 0 1px 3px rgba(12,12,12,0.14);
   }
 
-  .dropdown-item {
-    transition: background .3s ease;
+  /* ── Filter button ── */
+  .flt-btn {
+    font-family: var(--font);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.22,1,0.36,1);
   }
-  .dropdown-item:hover { background: #f8f8f6; }
-  .dropdown-item.selected { background: #f5f5f2; }
+  .flt-btn:hover {
+    border-color: rgba(12,12,12,0.28);
+    color: var(--ink);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(12,12,12,0.07);
+  }
+  .flt-btn--active {
+    background: var(--ink) !important;
+    color: var(--white) !important;
+    border-color: var(--ink) !important;
+    box-shadow: 0 4px 14px rgba(12,12,12,0.20) !important;
+  }
+  .flt-btn:active { transform: scale(0.97); }
+
+  /* ── Gold accent badge ── */
+  .flt-badge {
+    min-width: 17px;
+    height: 17px;
+    border-radius: 6px;
+    padding: 0 5px;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gold);
+    color: var(--ink);
+    letter-spacing: 0;
+  }
+
+  /* ── Divider ── */
+  .flt-sep {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+  }
+
+  /* ── Clear btn ── */
+  .clr-btn {
+    font-family: var(--font);
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.18s ease;
+  }
+  .clr-btn:hover { color: var(--ink); }
+
+  /* ── Result count ── */
+  .res-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+  }
+  .res-count strong { color: var(--ink); font-weight: 500; }
+
+  /* ── Dropdown ── */
+  @keyframes dropReveal {
+    from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .drop-panel {
+    animation: dropReveal 0.2s cubic-bezier(0.22,1,0.36,1) both;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 50;
+    min-width: 200px;
+    width: 100%;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 16px 40px rgba(12,12,12,0.10), 0 4px 12px rgba(12,12,12,0.06);
+    overflow: hidden;
+  }
+  .drop-header {
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .drop-label {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .drop-count {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--gold);
+    font-weight: 500;
+  }
+  .drop-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 13px;
+    color: #374151;
+    transition: background 0.14s ease;
+  }
+  .drop-item:hover { background: rgba(201,168,76,0.06); }
+  .drop-item.is-sel { background: rgba(201,168,76,0.09); }
+  .drop-item.is-sel .ditem-text { font-weight: 600; color: var(--ink); }
+  .ditem-left { display: flex; align-items: center; gap: 10px; }
+  .ditem-check {
+    width: 16px; height: 16px;
+    border-radius: 5px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.14s ease, background 0.14s ease;
+  }
+  .drop-item.is-sel .ditem-check {
+    background: var(--gold);
+    border-color: var(--gold);
+  }
+  .ditem-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 `;
 
 const FILTER_GROUPS = [
   {
-    key: 'niveau',
-    label: 'Niveau',
-    single: true,
+    key: 'niveau', label: 'Niveau', single: true,
     options: [
-      { value: 'Licence', label: 'Licence', sub: 'binome' },
-      { value: 'Master', label: 'Master', sub: 'individuel' },
+      { value: 'Licence', label: 'Licence', sub: 'binôme' },
+      { value: 'Master',  label: 'Master',  sub: 'individuel' },
     ],
   },
   {
-    key: 'statut',
-    label: 'Statut',
-    single: false,
+    key: 'statut', label: 'Statut', single: false,
     options: [
       { value: 'disponible', label: 'Disponible' },
-      { value: 'urgent', label: 'Urgent' },
-      { value: 'complet', label: 'Complet' },
+      { value: 'urgent',     label: 'Urgent' },
+      { value: 'complet',    label: 'Complet' },
     ],
   },
   {
-    key: 'domaine',
-    label: 'Domaine',
-    single: false,
+    key: 'domaine', label: 'Domaine', single: false,
     options: [
-      { value: 'tech', label: 'Tech et Numerique' },
-      { value: 'finance', label: 'Finance' },
-      { value: 'sante', label: 'Sante' },
-      { value: 'droit', label: 'Droit' },
+      { value: 'tech',      label: 'Tech & Numérique' },
+      { value: 'finance',   label: 'Finance' },
+      { value: 'sante',     label: 'Santé' },
+      { value: 'droit',     label: 'Droit' },
       { value: 'marketing', label: 'Marketing' },
       { value: 'industrie', label: 'Industrie' },
     ],
   },
 ];
 
-function DropdownGroup({ group, selected, onToggle, onClose }) {
-  const activeCount = selected.length;
-
+function DropdownPanel({ group, selected, onToggle, onClose }) {
   return (
-    <div className="drop-in dropdown-shell absolute top-full left-0 mt-2 z-50 w-full sm:w-auto sm:min-w-[200px] bg-white overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E5E5]">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500" style={{ fontFamily: 'var(--font-sans)' }}>
-          {group.label}
-        </p>
-        {activeCount > 0 && (
-          <span className="text-[10px] font-medium text-zinc-500">
-            {activeCount} selectionne{activeCount > 1 ? 's' : ''}
-          </span>
+    <div className="drop-panel">
+      <div className="drop-header">
+        <span className="drop-label">{group.label}</span>
+        {selected.length > 0 && (
+          <span className="drop-count">{selected.length} sél.</span>
         )}
       </div>
-
-      <div className="py-1">
-        {group.options.map((opt) => {
-          const isSelected = selected.includes(opt.value);
+      <div style={{ padding: '4px 0' }}>
+        {group.options.map(opt => {
+          const isSel = selected.includes(opt.value);
           return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => { onToggle(opt.value); if (group.single) onClose(); }}
-              className={`dropdown-item ${isSelected ? 'selected' : ''} w-full flex items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-zinc-700`}
-              style={{ fontFamily: 'var(--font-sans)' }}
-            >
-              <span className="flex items-center gap-2.5">
-                <span className="w-4 h-4 rounded-sm border border-zinc-300 flex items-center justify-center shrink-0 bg-white">
-                  {isSelected && (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-700">
+            <button key={opt.value} type="button"
+              className={`drop-item ${isSel ? 'is-sel' : ''}`}
+              onClick={() => { onToggle(opt.value); if (group.single) onClose(); }}>
+              <span className="ditem-left">
+                <span className="ditem-check">
+                  {isSel && (
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0C0C0C" strokeWidth="3.2" strokeLinecap="round">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   )}
                 </span>
-                {opt.label}
+                <span className="ditem-text">{opt.label}</span>
               </span>
-              {opt.sub && (
-                <span className="text-[10px] text-zinc-400 font-normal">{opt.sub}</span>
-              )}
+              {opt.sub && <span className="ditem-sub">{opt.sub}</span>}
             </button>
           );
         })}
@@ -172,13 +284,7 @@ function DropdownGroup({ group, selected, onToggle, onClose }) {
   );
 }
 
-export default function Filters({
-  level,
-  onLevelChange,
-  resultCount,
-  totalCount,
-  onFiltersChange,
-}) {
+export default function Filters({ level, onLevelChange, resultCount, totalCount, onFiltersChange }) {
   const [activeFilters, setActiveFilters] = useState({
     niveau: level ? [level] : [],
     statut: [],
@@ -187,7 +293,7 @@ export default function Filters({
   const [openGroup, setOpenGroup] = useState(null);
 
   useEffect(() => {
-    setActiveFilters((prev) => {
+    setActiveFilters(prev => {
       const nextLevel = level ? [level] : [];
       if ((prev.niveau ?? [])[0] === nextLevel[0]) return prev;
       return { ...prev, niveau: nextLevel };
@@ -195,7 +301,7 @@ export default function Filters({
   }, [level]);
 
   const syncLevel = useCallback((val) => {
-    setActiveFilters((prev) => {
+    setActiveFilters(prev => {
       const next = { ...prev, niveau: [val] };
       onFiltersChange?.(next);
       return next;
@@ -204,20 +310,15 @@ export default function Filters({
   }, [onLevelChange, onFiltersChange]);
 
   const toggleFilter = (groupKey, value) => {
-    const group = FILTER_GROUPS.find((g) => g.key === groupKey);
-    setActiveFilters((prev) => {
+    const group = FILTER_GROUPS.find(g => g.key === groupKey);
+    setActiveFilters(prev => {
       let next;
       if (group.single) {
         next = { ...prev, [groupKey]: [value] };
         if (groupKey === 'niveau') onLevelChange?.(value);
       } else {
         const cur = prev[groupKey];
-        next = {
-          ...prev,
-          [groupKey]: cur.includes(value)
-            ? cur.filter((v) => v !== value)
-            : [...cur, value],
-        };
+        next = { ...prev, [groupKey]: cur.includes(value) ? cur.filter(v => v !== value) : [...cur, value] };
       }
       onFiltersChange?.(next);
       return next;
@@ -235,64 +336,58 @@ export default function Filters({
     + (activeFilters.statut?.length ?? 0)
     + (activeFilters.domaine?.length ?? 0);
 
+  const niveauGroup = FILTER_GROUPS.find(g => g.key === 'niveau');
+
   return (
     <>
       <style>{STYLES}</style>
+      <div style={{ fontFamily: 'var(--font)' }}>
+        <div className="flex flex-wrap items-center gap-2.5">
 
-      <div className="flex flex-col gap-4 w-full" style={{ fontFamily: 'var(--font-sans)' }}>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="level-toggle flex items-center gap-1 shrink-0 w-full sm:w-auto">
-            {FILTER_GROUPS.find((g) => g.key === 'niveau').options.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => syncLevel(opt.value)}
-                className={`level-btn flex-1 sm:flex-none px-4 py-2.5 rounded-md text-[11px] font-semibold uppercase tracking-[0.14em] border ${(activeFilters.niveau ?? []).includes(opt.value)
-                  ? 'level-btn--active'
-                  : ''
-                }`}
-                style={{ fontFamily: 'var(--font-sans)' }}
-              >
+          {/* Level Toggle */}
+          <div className="lvl-wrap shrink-0">
+            {niveauGroup.options.map(opt => (
+              <button key={opt.value} type="button"
+                className={`lvl-btn ${(activeFilters.niveau ?? []).includes(opt.value) ? 'lvl-btn--on' : 'lvl-btn--off'}`}
+                onClick={() => syncLevel(opt.value)}>
                 {opt.label}
                 {opt.sub && (
-                  <span className="ml-1 font-normal normal-case tracking-normal opacity-55">· {opt.sub}</span>
+                  <span style={{ marginLeft: 5, fontWeight: 400, textTransform: 'none', letterSpacing: 'normal', opacity: 0.5, fontSize: 9 }}>
+                    · {opt.sub}
+                  </span>
                 )}
               </button>
             ))}
           </div>
 
-          <div className="filter-divider hidden sm:block h-8" />
+          <div className="flt-sep hidden sm:block" style={{ height: 30 }} />
 
-          {FILTER_GROUPS.filter((g) => g.key !== 'niveau').map((group) => {
+          {/* Dropdowns */}
+          {FILTER_GROUPS.filter(g => g.key !== 'niveau').map(group => {
             const count = (activeFilters[group.key] ?? []).length;
             const isOpen = openGroup === group.key;
+            const isActive = count > 0;
 
             return (
               <div key={group.key} className="relative w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setOpenGroup(isOpen ? null : group.key)}
-                  className="filter-btn w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 px-4 py-2.5 text-[12px] font-medium rounded-md border bg-white border-[#E5E5E5] text-zinc-700"
-                  style={{ fontFamily: 'var(--font-sans)' }}
-                >
+                <button type="button"
+                  className={`flt-btn w-full sm:w-auto ${isActive ? 'flt-btn--active' : ''}`}
+                  onClick={() => setOpenGroup(isOpen ? null : group.key)}>
                   {group.label}
-                  {count > 0 && (
-                    <span className="w-4 h-4 rounded-sm bg-zinc-100 text-[10px] font-semibold flex items-center justify-center text-zinc-700">
-                      {count}
-                    </span>
-                  )}
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                  {count > 0 && <span className="flt-badge">{count}</span>}
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                    strokeLinecap="round"
+                    style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease', opacity: 0.6 }}>
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </button>
-
                 {isOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setOpenGroup(null)} />
-                    <DropdownGroup
+                    <DropdownPanel
                       group={group}
                       selected={activeFilters[group.key] ?? []}
-                      onToggle={(val) => toggleFilter(group.key, val)}
+                      onToggle={val => toggleFilter(group.key, val)}
                       onClose={() => setOpenGroup(null)}
                     />
                   </>
@@ -301,35 +396,25 @@ export default function Filters({
             );
           })}
 
+          {/* Result count */}
           {(resultCount !== undefined || totalCount !== undefined) && (
             <>
-              <div className="filter-divider hidden sm:block h-8 ml-1" />
-              <span className="text-[11px] font-medium text-zinc-500 whitespace-nowrap" style={{ fontFamily: 'var(--font-sans)' }}>
+              <div className="flt-sep hidden sm:block" style={{ height: 30 }} />
+              <span className="res-count">
                 {resultCount !== undefined ? (
-                  <>
-                    <span className="text-zinc-900 font-semibold">{resultCount}</span>
-                    {totalCount !== undefined && (
-                      <span className="text-zinc-400"> / {totalCount}</span>
-                    )}
-                    {' '}resultat{resultCount > 1 ? 's' : ''}
-                  </>
+                  <><strong>{resultCount}</strong>{totalCount !== undefined && <> / {totalCount}</>} résultat{resultCount !== 1 ? 's' : ''}</>
                 ) : (
-                  <span className="text-zinc-900 font-semibold">{totalCount} total</span>
+                  <strong>{totalCount}</strong>
                 )}
               </span>
             </>
           )}
 
+          {/* Clear all */}
           {totalActive > 0 && (
-            <button
-              type="button"
-              onClick={clearAll}
-              className="clear-btn sm:ml-auto flex items-center gap-1.5 text-[11px] font-medium text-zinc-500"
-              style={{ fontFamily: 'var(--font-sans)' }}
-            >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
+            <button type="button" onClick={clearAll} className="clr-btn sm:ml-auto">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
               Tout effacer
             </button>
@@ -339,5 +424,3 @@ export default function Filters({
     </>
   );
 }
-
-

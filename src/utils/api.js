@@ -1,16 +1,19 @@
 // src/services/api.js
 // Client API Laravel: /api/v1/...
 
-const API_BASE =
-  (import.meta?.env?.VITE_API_BASE_URL || "http://127.0.0.1:8000/api").replace(
-    /\/$/,
-    ""
-  );
+const PRIMARY_API_BASE = (
+  import.meta?.env?.VITE_API_BASE_URL || "http://127.0.0.1:18000/api"
+).replace(/\/$/, "");
 
-const V1 = `${API_BASE}/v1`;
+const API_BASE_CANDIDATES = [
+  PRIMARY_API_BASE,
+  "http://127.0.0.1:18000/api",
+  "http://localhost:18000/api",
+].filter((base, index, arr) => arr.indexOf(base) === index);
 
 // 🔥 HTTP intelligent (JSON OU multipart)
 async function http(path, options = {}) {
+  const method = String(options?.method || "GET").toUpperCase();
   const isFormData = options?.body instanceof FormData;
 
   const headers = {
@@ -23,10 +26,34 @@ async function http(path, options = {}) {
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(`${V1}${path}`, {
-    ...options,
-    headers,
-  });
+  const basesToTry =
+    method === "GET" ? API_BASE_CANDIDATES : [PRIMARY_API_BASE];
+
+  let res = null;
+  let lastNetworkError = null;
+
+  for (const base of basesToTry) {
+    try {
+      const candidate = await fetch(`${base}/v1${path}`, {
+        ...options,
+        headers,
+      });
+
+      if (candidate.ok || method !== "GET" || candidate.status !== 404) {
+        res = candidate;
+        break;
+      }
+    } catch (error) {
+      lastNetworkError = error;
+    }
+  }
+
+  if (!res) {
+    throw (
+      lastNetworkError ||
+      new Error("Impossible de joindre l'API backend.")
+    );
+  }
 
   const text = await res.text();
 
@@ -67,7 +94,33 @@ export function fileToBase64(file) {
 // ---------- API ----------
 
 export async function getSectors() {
-  return http("/sectors", { method: "GET" });
+  // Some local environments have another service answering 200 on a port.
+  // We only accept payloads that look like sectors arrays.
+  for (const base of API_BASE_CANDIDATES) {
+    try {
+      const res = await fetch(`${base}/v1/sectors`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+
+      if (!res.ok) continue;
+
+      const payload = await res.json().catch(() => null);
+      const list = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : null;
+
+      if (Array.isArray(list) && list.every((item) => item && typeof item === "object")) {
+        return list;
+      }
+    } catch {
+      // Try next candidate
+    }
+  }
+
+  throw new Error("Impossible de recuperer la liste des secteurs.");
 }
 
 export async function getSector(id) {

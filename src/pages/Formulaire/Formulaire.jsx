@@ -1,123 +1,125 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApplication } from '../../context/ApplicationContext';
 import Navbar from '../../components/Navbar/Navbar';
 
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   STYLES â€” Gold / Black / Ivory system
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
 
   :root {
-    --font-body:     'Inter', system-ui, sans-serif;
-    --font-title:    'Poppins', system-ui, sans-serif;
-    --indigo:        #6366F1;
-    --indigo-light:  #EEF2FF;
-    --indigo-ring:   rgba(99,102,241,0.16);
-    --amber:         #F59E0B;
-    --amber-light:   #FFFBEB;
-    --ink:           #09090b;
-    --white:         #ffffff;
-    --surface:       #F8F8F8;
-    --border:        #E4E4E7;
-    --muted:         #A1A1AA;
-    --danger:        #DC2626;
-    --danger-light:  #FEF2F2;
-    --success:       #16A34A;
-    --success-light: #F0FDF4;
+    --gold:        #D4A017;
+    --gold-dark:   #B8860B;
+    --gold-ring:   rgba(212,160,23,0.16);
+    --gold-muted:  rgba(212,160,23,0.09);
+    --ink:         #0A0A0A;
+    --ivory:       #FDFCF8;
+    --white:       #ffffff;
+    --border:      #E5E1D8;
+    --muted:       #9CA3AF;
+    --danger:      #DC2626;
+    --danger-bg:   #FEF2F2;
+    --success:     #15803D;
+    --success-bg:  #F0FDF4;
+    --font-display: 'Syne', sans-serif;
+    --font-body:    'DM Sans', sans-serif;
   }
 
-  /* ── Reset ciblé uniquement sur le formulaire ── */
-  .form-scope *, .form-scope *::before, .form-scope *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-  .form-scope { font-family: var(--font-body); color: #111827; }
-
-  /* ── Noise ── */
-  .noise::before {
-    content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
-    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.018'/%3E%3C/svg%3E");
+  .form-page {
+    background-color: var(--ivory);
+    background-image:
+      radial-gradient(ellipse 65% 45% at 5% 0%, rgba(212,160,23,0.05) 0%, transparent 55%),
+      radial-gradient(ellipse 55% 35% at 95% 100%, rgba(212,160,23,0.04) 0%, transparent 50%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 
-  /* ── Animations ── */
+  /* â”€â”€ Animations â”€â”€ */
   @keyframes fadeUp {
-    from { opacity:0; transform:translateY(14px); }
+    from { opacity:0; transform:translateY(16px); }
     to   { opacity:1; transform:translateY(0); }
   }
-  .fu   { opacity:0; animation: fadeUp .55s cubic-bezier(.16,1,.3,1) forwards; }
-  .fu1  { animation-delay:.05s; }
-  .fu2  { animation-delay:.12s; }
-  .fu3  { animation-delay:.19s; }
-  .fu4  { animation-delay:.26s; }
-  .fu5  { animation-delay:.33s; }
+  @keyframes errIn {
+    from { opacity:0; transform:translateY(-4px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  @keyframes barFill { from { width: 0%; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ════ FLOATING LABEL FIELDS ════ */
+  .fu  { opacity:0; animation: fadeUp .5s cubic-bezier(.16,1,.3,1) forwards; }
+  .fu1 { animation-delay:.04s; }
+  .fu2 { animation-delay:.10s; }
+  .fu3 { animation-delay:.17s; }
+
+  .spin-anim { animation: spin .75s linear infinite; }
+
+  /* â•â•â•â• FLOATING LABEL FIELDS â•â•â•â• */
   .fl { position: relative; }
 
   .fl-in {
     width: 100%;
-    padding: 20px 16px 8px 16px;
+    padding: 22px 16px 8px 16px;
     background: var(--white);
     border: 1.5px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     font-family: var(--font-body);
     font-size: 14px;
     color: var(--ink);
     outline: none;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-    transition: border-color .2s, box-shadow .2s, background .15s;
+    transition: border-color .2s ease, box-shadow .2s ease, background .15s ease;
     -webkit-appearance: none; appearance: none;
   }
   .fl-in::placeholder { color: transparent; }
+  .fl-in:hover:not(:focus) { border-color: #C9C4B8; }
+  .fl-in:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-ring);
+    background: #FFFDF5;
+  }
+  .fl-in.ok  { border-color: var(--gold); background: #FFFDF5; }
+  .fl-in.err { border-color: #FCA5A5; background: var(--danger-bg); }
+  .fl-in.err:focus { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220,38,38,.10); }
 
   .fl-lb {
     position: absolute;
     left: 16px; top: 50%;
     transform: translateY(-50%);
     font-family: var(--font-body);
-    font-size: 13px; color: #6b7280;
+    font-size: 13px; color: #9CA3AF;
     pointer-events: none;
-    transition: top .17s cubic-bezier(.16,1,.3,1),
-                transform .17s cubic-bezier(.16,1,.3,1),
+    transition: top .17s cubic-bezier(.16,1,.3,1), transform .17s cubic-bezier(.16,1,.3,1),
                 font-size .17s, color .17s, font-weight .17s;
     transform-origin: left center;
   }
-
   .fl-in:focus + .fl-lb,
   .fl-in:not(:placeholder-shown) + .fl-lb,
   .fl-lb.up {
     top: 10px; transform: translateY(0) scale(.7);
-    color: var(--ink); font-weight: 600; letter-spacing: .03em;
+    color: var(--gold-dark); font-weight: 700; letter-spacing: .04em;
   }
 
-  .fl-in:focus {
-    border-color: var(--indigo);
-    box-shadow: 0 0 0 3px var(--indigo-ring), 0 10px 20px rgba(15, 23, 42, 0.06);
-    background: var(--white);
-  }
-  .fl-in:hover:not(:focus) { border-color: #cbd5e1; }
-
-  .fl-in.ok  { border-color: #93c5fd; background: #f8fbff; }
-  .fl-in.ok:focus { border-color: var(--success); box-shadow: 0 0 0 3.5px rgba(22,163,74,.12); }
-  .fl-in.err { border-color: #fca5a5; background: var(--danger-light); }
-  .fl-in.err:focus { border-color: var(--danger); box-shadow: 0 0 0 3.5px rgba(220,38,38,.10); }
-
-  select.fl-in { padding-top: 22px; padding-bottom: 6px; cursor: pointer; }
+  select.fl-in { padding-top: 22px; padding-bottom: 8px; cursor: pointer; }
   textarea.fl-in { padding-top: 24px; resize: vertical; min-height: 108px; }
-  textarea.fl-in + .fl-lb { top: 16px; transform: translateY(0); }
+  textarea.fl-in + .fl-lb { top: 18px; transform: translateY(0); }
   textarea.fl-in:focus + .fl-lb,
   textarea.fl-in:not(:placeholder-shown) + .fl-lb {
     top: 8px; transform: translateY(0) scale(.7);
   }
 
-  /* —— Custom select —— */
+  /* â”€â”€ Inline validation icon â”€â”€ */
+  .val-icon { position:absolute; right:14px; top:50%; transform:translateY(-50%); pointer-events:none; }
+
+  /* â”€â”€ Custom select â”€â”€ */
   .sel { position: relative; }
   .sel-btn {
     width: 100%;
-    padding: 22px 14px 6px 16px;
+    padding: 22px 14px 8px 16px;
     background: var(--white);
     border: 1.5px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     font-family: var(--font-body);
     color: var(--ink);
     text-align: left;
@@ -126,156 +128,120 @@ const STYLES = `
     justify-content: space-between;
     gap: 8px;
     cursor: pointer;
-    transition: border-color .18s, box-shadow .18s, background .15s;
+    transition: border-color .18s ease, box-shadow .18s ease;
   }
-  .sel-btn:hover { border-color: #cbd5e1; }
-  .sel.open .sel-btn {
-    border-color: var(--indigo);
-    box-shadow: 0 0 0 3.5px var(--indigo-ring);
-  }
-  .sel-value {
-    font-size: 14px;
-    line-height: 1.2;
-    color: var(--ink);
-  }
-  .sel-value.placeholder { color: var(--muted); }
+  .sel-btn:hover { border-color: #C9C4B8; }
+  .sel.open .sel-btn { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-ring); }
+  .sel-value { font-size: 14px; color: var(--ink); }
+  .sel-value.ph { color: var(--muted); }
   .sel-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    right: 0;
-    z-index: 50;
+    position: absolute; top: calc(100% + 6px); left:0; right:0; z-index:50;
     background: var(--white);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 16px 30px rgba(2, 6, 23, 0.12);
+    border-radius: 14px;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.10);
     overflow: hidden;
   }
-  .sel-option {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    text-align: left;
-    padding: 10px 14px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    color: #27272a;
-    cursor: pointer;
-    transition: background .15s ease, color .15s ease;
+  .sel-opt {
+    width: 100%; border:0; background:transparent; text-align:left;
+    padding: 10px 14px; font-family: var(--font-body); font-size:14px; color:#374151;
+    cursor:pointer; transition: background .15s ease;
   }
-  .sel-option:hover { background: #f4f4f5; }
-  .sel-option.active {
-    background: #111111;
-    color: #ffffff;
-  }
+  .sel-opt:hover { background: var(--gold-muted); }
+  .sel-opt.active { background: var(--ink); color:#fff; }
 
-  @keyframes errIn { from{opacity:0;transform:translateY(-3px)} to{opacity:1;transform:translateY(0)} }
+  /* â”€â”€ Error message â”€â”€ */
   .err-msg {
     animation: errIn .2s ease both;
-    display:flex; align-items:center; gap:4px;
-    margin-top:5px;
-    font-family: var(--font-body);
-    font-size: 11px; font-weight: 500; color: var(--danger);
+    display: flex; align-items: center; gap: 4px;
+    margin-top: 5px; font-family: var(--font-body);
+    font-size: 11px; font-weight:500; color: var(--danger);
   }
 
-  /* ════ DROP ZONE ════ */
+  /* â”€â”€ Drop zone â”€â”€ */
   .dz {
     position:relative; overflow:hidden;
     border: 1.5px dashed var(--border);
-    border-radius: 12px; padding: 28px 20px;
-    text-align: center; background: var(--white); cursor: pointer;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-    transition: border-color .2s, background .2s, box-shadow .2s;
+    border-radius: 14px; padding: 28px 20px;
+    text-align:center; background: var(--white); cursor:pointer;
+    transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
   }
   .dz:hover, .dz.drag {
-    border-color: var(--indigo);
-    background: var(--indigo-light);
-    box-shadow: 0 0 0 3.5px var(--indigo-ring);
+    border-color: var(--gold);
+    background: #FFFDF5;
+    box-shadow: 0 0 0 3px var(--gold-ring);
   }
   .dz input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
 
-  /* ════ PROGRESS ════ */
-  @keyframes barW { from{width:0%} }
-  .bar { animation: barW .7s cubic-bezier(.16,1,.3,1) both; }
+  /* â”€â”€ Progress bar â”€â”€ */
+  .bar-anim { animation: barFill .7s cubic-bezier(.16,1,.3,1) both; }
 
-  /* ════ BUTTON CTA ════ */
+  /* â”€â”€ CTA button â”€â”€ */
   .btn-cta {
     width:100%; display:inline-flex; align-items:center; justify-content:center; gap:10px;
     padding: 16px 28px;
     background: var(--ink); color: var(--white);
-    font-family: var(--font-body);
-    font-size: 14px; font-weight: 600; letter-spacing: .02em;
-    border:1px solid var(--ink); border-radius: 12px; cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 14px; font-weight: 700; letter-spacing: .03em;
+    border: 1.5px solid var(--ink); border-radius: 14px; cursor:pointer;
     position:relative; overflow:hidden;
-    transition: transform .2s cubic-bezier(.16,1,.3,1), box-shadow .2s, background .15s;
+    transition: transform .2s ease, box-shadow .2s ease, background .15s ease;
   }
-  .btn-cta::before {
-    content:''; position:absolute; top:0; left:-65%; width:40%; height:100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
-    transform: skewX(-18deg); transition: left 0s;
+  .btn-cta::after {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.10), transparent);
+    opacity:0; transition: opacity .2s ease;
   }
-  .btn-cta:hover::before { left:135%; transition: left .5s cubic-bezier(.22,1,.36,1); }
-  .btn-cta:hover  { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.22); background:#1a1a1a; }
-  .btn-cta:active { transform: scale(.985); }
+  .btn-cta:hover { transform:translateY(-2px); box-shadow:0 14px 32px rgba(0,0,0,.22); background:#111; }
+  .btn-cta:hover::after { opacity:1; }
+  .btn-cta:active { transform:scale(.985); }
   .btn-cta:disabled { opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
 
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .spin { animation: spin .75s linear infinite; }
-
-  @media (max-width: 767px) {
-    .fl-in {
-      font-size: 16px;
-      padding: 18px 14px 8px;
-    }
-    .fl-lb {
-      font-size: 13px;
-    }
-    .btn-cta {
-      padding: 14px 20px;
-      font-size: 13px;
-    }
+  /* â”€â”€ Section heading â”€â”€ */
+  .sec-label {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sec-bar {
+    width: 3px; height: 16px; border-radius: 99px;
+    background: linear-gradient(180deg, var(--gold), var(--gold-dark));
+    flex-shrink: 0;
+  }
+  .sec-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, rgba(212,160,23,0.25), transparent);
   }
 
-  ::-webkit-scrollbar { width:4px; }
-  ::-webkit-scrollbar-track { background:transparent; }
-  ::-webkit-scrollbar-thumb { background:#e4e4e7; border-radius:99px; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset:3px; border-radius:6px; }
+
+  @media (max-width:767px) {
+    .fl-in { font-size: 16px; }
+  }
 `;
 
-/* ── Field ── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   FIELD COMPONENT
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function Field({ label, name, type='text', value, onChange, error, required, hint, options, rows }) {
-  const isSel  = type === 'select';
-  const isTxt  = type === 'textarea';
+  const isSel = type === 'select';
+  const isTxt = type === 'textarea';
   const hasVal = String(value ?? '').length > 0;
-  const cls    = error ? 'err' : hasVal ? 'ok' : '';
+  const cls = error ? 'err' : hasVal ? 'ok' : '';
   const [open, setOpen] = useState(false);
   const selRef = useRef(null);
 
-  const normalizedOptions = (options ?? []).map((o) => ({
-    value: o?.value ?? o,
-    label: o?.label ?? o,
-  }));
-  const selectedOption = normalizedOptions.find((o) => String(o.value) === String(value));
+  const normalizedOptions = (options ?? []).map(o => ({ value: o?.value ?? o, label: o?.label ?? o }));
+  const selectedOption = normalizedOptions.find(o => String(o.value) === String(value));
 
   useEffect(() => {
     if (!open) return;
-    const onDocClick = (e) => {
-      if (!selRef.current?.contains(e.target)) setOpen(false);
-    };
-    const onEsc = (e) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDocClick);
+    const onOut = e => { if (!selRef.current?.contains(e.target)) setOpen(false); };
+    const onEsc = e => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onOut);
     document.addEventListener('keydown', onEsc);
-    return () => {
-      document.removeEventListener('mousedown', onDocClick);
-      document.removeEventListener('keydown', onEsc);
-    };
+    return () => { document.removeEventListener('mousedown', onOut); document.removeEventListener('keydown', onEsc); };
   }, [open]);
 
-  const commitSelect = (nextValue) => {
-    onChange?.({ target: { name, value: nextValue } });
-    setOpen(false);
-  };
+  const commitSelect = v => { onChange?.({ target: { name, value: v } }); setOpen(false); };
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
@@ -284,235 +250,235 @@ function Field({ label, name, type='text', value, onChange, error, required, hin
           <>
             <div ref={selRef} className={`sel ${open ? 'open' : ''}`}>
               <input type="hidden" name={name} value={value ?? ''} />
-              <button
-                type="button"
-                className={`sel-btn ${cls}`}
-                onClick={() => setOpen((v) => !v)}
-                aria-haspopup="listbox"
-                aria-expanded={open}
-              >
-                <span className={`sel-value ${selectedOption ? '' : 'placeholder'}`}>
-                  {selectedOption?.label ?? 'Selectionner'}
+              <button type="button" className={`sel-btn ${cls}`}
+                onClick={() => setOpen(v => !v)} aria-haspopup="listbox" aria-expanded={open}>
+                <span className={`sel-value ${selectedOption ? '' : 'ph'}`}>
+                  {selectedOption?.label ?? 'Sélectionner'}
                 </span>
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#a1a1aa"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease' }}
-                >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round"
+                  style={{ transform: open ? 'rotate(180deg)' : 'none', transition:'transform .2s ease' }}>
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </button>
-
               {open && (
                 <div className="sel-menu" role="listbox">
-                  {normalizedOptions.map((opt) => {
-                    const active = String(opt.value) === String(value);
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        className={`sel-option ${active ? 'active' : ''}`}
-                        onClick={() => commitSelect(opt.value)}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
+                  {normalizedOptions.map(opt => (
+                    <button key={opt.value} type="button"
+                      className={`sel-opt ${String(opt.value) === String(value) ? 'active' : ''}`}
+                      onClick={() => commitSelect(opt.value)}>
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-            <label className="fl-lb up">{label}{required && <span style={{color:'var(--danger)',marginLeft:2}}>*</span>}</label>
+            <label className="fl-lb up" style={{ pointerEvents:'none' }}>
+              {label}{required && <span style={{color:'var(--danger)',marginLeft:2}}>*</span>}
+            </label>
           </>
         )}
         {isTxt && (
           <>
-            <textarea name={name} value={value} onChange={onChange}
-              required={required} rows={rows??4} placeholder=" " className={`fl-in ${cls}`} />
-            <label className="fl-lb">{label}{required && <span style={{color:'var(--danger)',marginLeft:2}}>*</span>}</label>
+            <textarea name={name} value={value} onChange={onChange} required={required}
+              rows={rows ?? 4} placeholder=" " className={`fl-in ${cls}`} />
+            <label className="fl-lb">
+              {label}{required && <span style={{color:'var(--danger)',marginLeft:2}}>*</span>}
+            </label>
           </>
         )}
         {!isSel && !isTxt && (
           <>
             <input type={type} name={name} value={value} onChange={onChange}
               required={required} placeholder=" " className={`fl-in ${cls}`} />
-            <label className="fl-lb">{label}{required && <span style={{color:'var(--danger)',marginLeft:2}}>*</span>}</label>
+            <label className="fl-lb">
+              {label}{required && <span style={{color:'var(--danger)',marginLeft:2}}>*</span>}
+            </label>
             {hasVal && (
-              <span style={{position:'absolute',right:14,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}>
+              <span className="val-icon">
                 {error
-                  ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                  : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D4A017" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                 }
               </span>
             )}
           </>
         )}
       </div>
-      {error && <p className="err-msg"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{error}</p>}
-      {hint && !error && <p style={{marginTop:6,fontSize:11,color:'#6B7280',fontFamily:'var(--font-body)',lineHeight:1.5}}>{hint}</p>}
+      {error && (
+        <p className="err-msg">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {error}
+        </p>
+      )}
+      {hint && !error && (
+        <p style={{ marginTop:5, fontSize:11, color:'#9CA3AF', fontFamily:'var(--font-body)', lineHeight:1.5 }}>{hint}</p>
+      )}
     </div>
   );
 }
 
-/* ── FileZone ── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   FILE DROP ZONE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function FileZone({ file, onChange, error, label = 'CV / Document' }) {
   const [drag, setDrag] = useState(false);
   return (
     <div>
-      <p style={{fontSize:11,fontWeight:600,letterSpacing:'.14em',textTransform:'uppercase',color:'#6B7280',marginBottom:8,fontFamily:'var(--font-body)'}}>
+      <p style={{ fontSize:11, fontWeight:700, letterSpacing:'.15em', textTransform:'uppercase',
+        color:'#6B6560', marginBottom:8, fontFamily:'var(--font-display)' }}>
         {label} <span style={{color:'var(--danger)'}}>*</span>
       </p>
-      <div className={`dz ${drag?'drag':''}`}
-        onDragOver={e=>{e.preventDefault();setDrag(true)}}
-        onDragLeave={()=>setDrag(false)}
-        onDrop={e=>{e.preventDefault();setDrag(false);onChange(e.dataTransfer.files[0])}}>
-        <input type="file" accept=".pdf,.doc,.docx" onChange={e=>onChange(e.target.files[0])} />
+      <div className={`dz ${drag ? 'drag' : ''}`}
+        onDragOver={e => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={e => { e.preventDefault(); setDrag(false); onChange(e.dataTransfer.files[0]); }}>
+        <input type="file" accept=".pdf,.doc,.docx" onChange={e => onChange(e.target.files[0])} />
         {file ? (
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
-            <div style={{width:40,height:40,borderRadius:10,background:'var(--success-light)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="1.8" strokeLinecap="round">
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:'rgba(212,160,23,0.10)',
+              border:'1px solid rgba(212,160,23,0.25)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#D4A017" strokeWidth="1.8" strokeLinecap="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/>
               </svg>
             </div>
             <div>
-              <p style={{fontSize:13,fontWeight:600,color:'#3f3f46',fontFamily:'var(--font-body)',maxWidth:220,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{file.name}</p>
-              <p style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{(file.size/1024).toFixed(0)} Ko · Cliquer pour changer</p>
+              <p style={{ fontSize:13, fontWeight:600, color:'#3f3f46', fontFamily:'var(--font-body)',
+                maxWidth:220, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{file.name}</p>
+              <p style={{ fontSize:11, color:'#9CA3AF', marginTop:2 }}>{(file.size/1024).toFixed(0)} Ko · Cliquer pour changer</p>
             </div>
           </div>
         ) : (
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8,pointerEvents:'none'}}>
-            <div style={{width:40,height:40,borderRadius:10,background:'var(--indigo-light)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--indigo)" strokeWidth="1.7" strokeLinecap="round">
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, pointerEvents:'none' }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:'rgba(212,160,23,0.08)',
+              border:'1px solid rgba(212,160,23,0.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#D4A017" strokeWidth="1.7" strokeLinecap="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
             </div>
-            <p style={{fontSize:13,fontWeight:500,color:'#52525b',fontFamily:'var(--font-body)'}}>
-              Glisser-déposer ou <span style={{color:'var(--indigo)',fontWeight:600}}>parcourir</span>
+            <p style={{ fontSize:13, fontWeight:500, color:'#52525b', fontFamily:'var(--font-body)' }}>
+              Glisser-déposer ou{' '}
+              <span style={{ color:'var(--gold-dark)', fontWeight:700 }}>parcourir</span>
             </p>
-            <p style={{fontSize:11,color:'var(--muted)'}}>PDF, DOC, DOCX · Max 5 Mo</p>
+            <p style={{ fontSize:11, color:'#9CA3AF' }}>PDF, DOC, DOCX · Max 5 Mo</p>
           </div>
         )}
       </div>
-      {error && <p className="err-msg" style={{marginTop:6}}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{error}</p>}
+      {error && (
+        <p className="err-msg" style={{ marginTop:6 }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {error}
+        </p>
+      )}
     </div>
   );
 }
 
-/* ── Section label ── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SECTION LABEL
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function Section({ label }) {
   return (
-    <div style={{display:'flex',alignItems:'center',gap:12,padding:'4px 0'}}>
-      <div style={{width:3,height:14,borderRadius:99,background:'var(--indigo)',flexShrink:0}} />
-      <span style={{fontSize:10,fontWeight:700,letterSpacing:'.22em',textTransform:'uppercase',color:'var(--indigo)',fontFamily:'var(--font-body)',flexShrink:0}}>
+    <div className="sec-label">
+      <div className="sec-bar" />
+      <span style={{ fontSize:10, fontWeight:700, letterSpacing:'.22em', textTransform:'uppercase',
+        color:'var(--gold-dark)', fontFamily:'var(--font-display)', flexShrink:0 }}>
         {label}
       </span>
-      <div style={{flex:1,height:1,background:'var(--indigo-light)'}} />
+      <div className="sec-line" />
     </div>
   );
 }
 
-/* ── Progress ── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PROGRESS BAR
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function Progress({ pct }) {
-  const color = pct===100 ? 'var(--success)' : pct>60 ? 'var(--indigo)' : 'var(--ink)';
+  const color = pct === 100 ? 'var(--success)' : pct > 60 ? 'var(--gold)' : 'var(--ink)';
   return (
     <div>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-        <span style={{fontSize:10,fontWeight:600,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--muted)',fontFamily:'var(--font-body)'}}>Complétion</span>
-        <span style={{fontSize:11,fontWeight:700,color,fontFamily:'var(--font-body)',transition:'color .5s'}}>{pct}%</span>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+        <span style={{ fontSize:10, fontWeight:700, letterSpacing:'.18em', textTransform:'uppercase',
+          color:'#9CA3AF', fontFamily:'var(--font-display)' }}>Complétion du dossier</span>
+        <span style={{ fontSize:11, fontWeight:700, color, fontFamily:'var(--font-body)', transition:'color .5s' }}>
+          {pct}%
+        </span>
       </div>
-      <div style={{height:3,background:'#F4F4F5',borderRadius:99,overflow:'hidden'}}>
-        <div className="bar" style={{height:'100%',width:`${pct}%`,background:color,borderRadius:99,transition:'width .7s ease'}} />
+      <div style={{ height:3, background:'#F0ECE4', borderRadius:99, overflow:'hidden' }}>
+        <div className="bar-anim" style={{ height:'100%', width:`${pct}%`, background:color,
+          borderRadius:99, transition:'width .7s ease' }} />
       </div>
     </div>
   );
 }
 
-/* ══════════════════════════════════════════════
-   MAIN
-══════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MAIN FORM
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 export default function Form() {
   const navigate = useNavigate();
-  const {
-    sector,
-    level,
-    setSectorAndModality,
-    student1,
-    student2,
-    setStudent1,
-    setStudent2,
-    setCvFile,
-    setCvValid,
-  } = useApplication();
+  const { sector, level, setSectorAndModality, student1, student2,
+    setStudent1, setStudent2, setCvFile, setCvValid } = useApplication();
 
   const [values, setValues] = useState({
-    nom: student1?.nom ?? '',
-    prenom: student1?.prenom ?? '',
-    email: student1?.email ?? '',
-    telephone: student1?.telephone ?? '',
-    niveau: level ?? '',
-    secteur: sector?.name ?? '',
-    universite: student1?.universite ?? '',
-    filiere: student1?.filiere ?? '',
-    nomBinome: student2?.nom ?? '',
-    prenomBinome: student2?.prenom ?? '',
-    emailBinome: student2?.email ?? '',
+    nom:           student1?.nom ?? '',
+    prenom:        student1?.prenom ?? '',
+    email:         student1?.email ?? '',
+    telephone:     student1?.telephone ?? '',
+    niveau:        level ?? '',
+    secteur:       sector?.name ?? '',
+    universite:    student1?.universite ?? '',
+    filiere:       student1?.filiere ?? '',
+    nomBinome:     student2?.nom ?? '',
+    prenomBinome:  student2?.prenom ?? '',
+    emailBinome:   student2?.email ?? '',
   });
-
-  const [files, setFiles]     = useState({ primary: null, partner: null });
-  const [errors, setErrors]   = useState({});
+  const [files,   setFiles]   = useState({ primary: null, partner: null });
+  const [errors,  setErrors]  = useState({});
   const [loading, setLoading] = useState(false);
 
   const isBinome = values.niveau === 'Licence';
 
   const req = ['nom','prenom','email','telephone','niveau','secteur','universite','filiere'];
   if (isBinome) req.push('nomBinome','prenomBinome');
-  const filled = req.filter(f => String(values[f]??'').trim().length > 0).length;
-  const requiredFileCount = isBinome ? 2 : 1;
-  const currentFileCount  = [files.primary, files.partner].filter(Boolean).length;
-  const pct = Math.round(((filled + Math.min(currentFileCount, requiredFileCount)) / (req.length + requiredFileCount)) * 100);
+  const filled = req.filter(f => String(values[f] ?? '').trim().length > 0).length;
+  const reqFiles = isBinome ? 2 : 1;
+  const curFiles = [files.primary, files.partner].filter(Boolean).length;
+  const pct = Math.round(((filled + Math.min(curFiles, reqFiles)) / (req.length + reqFiles)) * 100);
 
   const handle = e => {
-    const {name,value} = e.target;
-    setValues(p => ({...p,[name]:value}));
-    if (errors[name]) setErrors(p => {const n={...p}; delete n[name]; return n;});
+    const { name, value } = e.target;
+    setValues(p => ({ ...p, [name]: value }));
+    if (errors[name]) setErrors(p => { const n = {...p}; delete n[name]; return n; });
   };
-  const handleFileChange = (key, nextFile) => {
-    setFiles((prev) => ({ ...prev, [key]: nextFile }));
-    const errKey = key === 'primary' ? 'filePrimary' : 'filePartner';
-    if (errors[errKey]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[errKey];
-        return next;
-      });
-    }
+  const handleFile = (key, next) => {
+    setFiles(p => ({ ...p, [key]: next }));
+    const ek = key === 'primary' ? 'filePrimary' : 'filePartner';
+    if (errors[ek]) setErrors(p => { const n = {...p}; delete n[ek]; return n; });
   };
 
   const validate = () => {
     const e = {};
-    if (!values.nom.trim())        e.nom        = 'Le nom est requis.';
-    if (!values.prenom.trim())     e.prenom     = 'Le prénom est requis.';
+    if (!values.nom.trim())         e.nom        = 'Le nom est requis.';
+    if (!values.prenom.trim())      e.prenom     = 'Le prénom est requis.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) e.email = 'E-mail invalide.';
-    if (!/^[\d\s+\-()]{7,}$/.test(values.telephone))      e.telephone = 'Numéro invalide.';
-    if (!values.niveau)            e.niveau     = 'Sélectionnez votre niveau.';
-    if (!values.secteur)           e.secteur    = 'Sélectionnez un secteur.';
-    if (!values.universite.trim()) e.universite = "Université requise.";
-    if (!values.filiere.trim())    e.filiere    = 'Filière requise.';
+    if (!/^[\d\s+\-()]{7,}$/.test(values.telephone)) e.telephone = 'Numéro invalide.';
+    if (!values.niveau)             e.niveau     = 'Sélectionnez votre niveau.';
+    if (!values.secteur)            e.secteur    = 'Sélectionnez un secteur.';
+    if (!values.universite.trim())  e.universite = 'Université requise.';
+    if (!values.filiere.trim())     e.filiere    = 'Filière requise.';
     if (isBinome) {
       if (!values.nomBinome.trim())    e.nomBinome    = 'Nom du binôme requis.';
       if (!values.prenomBinome.trim()) e.prenomBinome = 'Prénom requis.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.emailBinome)) e.emailBinome = 'E-mail du binôme invalide.';
     }
-    if (!files.primary) e.filePrimary = 'Veuillez joindre votre CV.';
-    if (isBinome && !files.partner) e.filePartner = 'Veuillez joindre le CV du binôme.';
-    if (isBinome && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.emailBinome)) {
-  e.emailBinome = 'E-mail du binôme invalide.';
-}
+    if (!files.primary)              e.filePrimary = 'Veuillez joindre votre CV.';
+    if (isBinome && !files.partner)  e.filePartner = 'Veuillez joindre le CV du binôme.';
     return e;
   };
 
@@ -522,36 +488,15 @@ export default function Form() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     await new Promise(r => setTimeout(r, 1400));
-    if (sector && values.niveau) {
-      setSectorAndModality(sector, values.niveau);
-    }
-    setStudent1({
-      nom: values.nom.trim(),
-      prenom: values.prenom.trim(),
-      email: values.email.trim(),
-      telephone: values.telephone.trim(),
-      universite: values.universite.trim(),
-      filiere: values.filiere.trim(),
-      niveau: values.niveau,
-    });
-    setStudent2(
-      isBinome
-        ? {
-            nom: values.nomBinome.trim(),
-            prenom: values.prenomBinome.trim(),
-            email: values.emailBinome.trim(),
-            telephone: '',
-            universite: '',
-            filiere: '',
-            niveau: values.niveau,
-          }
-        : { nom: '', prenom: '', email: '', telephone: '', universite: '', filiere: '', niveau: '' }
-    );
-    const cvPayload = isBinome
-      ? { student1: files.primary, student2: files.partner }
-      : files.primary;
-      console.log(cvPayload);
-    setCvFile(cvPayload);
+    if (sector && values.niveau) setSectorAndModality(sector, values.niveau);
+    setStudent1({ nom: values.nom.trim(), prenom: values.prenom.trim(), email: values.email.trim(),
+      telephone: values.telephone.trim(), universite: values.universite.trim(),
+      filiere: values.filiere.trim(), niveau: values.niveau });
+    setStudent2(isBinome
+      ? { nom: values.nomBinome.trim(), prenom: values.prenomBinome.trim(),
+          email: values.emailBinome.trim(), telephone:'', universite:'', filiere:'', niveau: values.niveau }
+      : { nom:'', prenom:'', email:'', telephone:'', universite:'', filiere:'', niveau:'' });
+    setCvFile(isBinome ? { student1: files.primary, student2: files.partner } : files.primary);
     setCvValid(isBinome ? Boolean(files.primary && files.partner) : Boolean(files.primary));
     setLoading(false);
     navigate('/recapitulatif');
@@ -563,90 +508,81 @@ export default function Form() {
     'Droit & Juridique','Marketing & Communication','Industrie & BTP',
     'Commerce & Vente','Ressources Humaines',
     ...(sector ? [sector.name] : []),
-  ].filter((v,i,a) => a.indexOf(v)===i);
+  ].filter((v,i,a) => a.indexOf(v) === i);
 
   const errCount = Object.keys(errors).length;
 
   return (
     <>
       <style>{STYLES}</style>
-
-      {/* ══ Navbar en dehors du form-scope pour ne pas être affectée par le reset CSS ══ */}
       <Navbar />
 
-      <div className="noise form-scope" style={{
-        minHeight:'100vh', display:'flex', flexDirection:'column',
-        background:'#F8FAFC', fontFamily:'var(--font-body)',
-      }}>
-        <main style={{flex:1, position:'relative', zIndex:10, padding:'clamp(20px, 4vw, 48px) clamp(14px, 4vw, 24px) clamp(48px, 8vw, 72px)'}}>
-          <div style={{maxWidth:680, margin:'0 auto 14px'}}>
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              style={{
-                display:'inline-flex',
-                alignItems:'center',
-                gap:8,
-                fontSize:12,
-                fontWeight:600,
-                color:'#71717A',
-                background:'transparent',
-                border:'none',
-                cursor:'pointer',
-                fontFamily:'var(--font-body)',
-              }}
-            >
+      <div className="form-page" style={{ fontFamily:'var(--font-body)' }}>
+        <main className="relative z-10 flex-1 px-4 pb-16 pt-24 sm:px-6 lg:px-8">
+
+          {/* Back button */}
+          <div className="mx-auto mb-4 w-full max-w-2xl">
+            <button type="button" onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500 transition hover:border-zinc-300 hover:text-zinc-900">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-                <line x1="19" y1="12" x2="5" y2="12"/>
-                <polyline points="12 19 5 12 12 5"/>
+                <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
               </svg>
               Retour
             </button>
           </div>
 
-          <div className="fu" style={{
-            maxWidth:680, margin:'0 auto',
-            background:'var(--white)',
-            borderRadius:20,
-            border:'1px solid #E4E4E7',
-            boxShadow:'0 12px 38px rgba(15,23,42,0.08), 0 1px 0 rgba(15,23,42,0.04)',
-            overflow:'hidden',
-          }}>
+          {/* Card */}
+          <div className="fu fu1 mx-auto w-full max-w-2xl overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.06)]">
 
-            <div style={{padding:'clamp(20px, 4vw, 36px) clamp(16px, 5vw, 44px) clamp(26px, 6vw, 48px)', display:'flex', flexDirection:'column', gap:30}}>
-
-              {/* Header interne */}
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
-                <div style={{display:'flex',alignItems:'center',gap:12}}>
-                  <div style={{
-                    width:36,height:36,borderRadius:10,
-                    background:'var(--ink)',
-                    display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,
-                  }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+            {/* Card header band */}
+            <div className="border-b border-zinc-200 bg-gradient-to-b from-[#fdfcf8] to-[#faf8f2] px-4 py-5 sm:px-8">
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, flexWrap:'wrap' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                  <div style={{ width:38, height:38, borderRadius:12, background:'var(--ink)',
+                    display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                       <polyline points="14 2 14 8 20 8"/>
-                      <line x1="16" y1="13" x2="8" y2="13"/>
-                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                     </svg>
                   </div>
                   <div>
-                    <p style={{fontSize:10,fontWeight:700,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--muted)',fontFamily:'var(--font-body)'}}>Dossier 2026</p>
-                    <p style={{fontSize:13,fontWeight:600,color:'var(--ink)',marginTop:1,fontFamily:'var(--font-title)'}}>Stage académique</p>
+                    <p style={{ fontSize:10, fontWeight:700, letterSpacing:'.18em', textTransform:'uppercase',
+                      color:'#9CA3AF', fontFamily:'var(--font-display)' }}>Dossier 2026</p>
+                    <p style={{ fontSize:14, fontWeight:700, color:'var(--ink)', marginTop:1, fontFamily:'var(--font-display)' }}>
+                      Stage académique
+                    </p>
                   </div>
                 </div>
-                <p style={{fontSize:11,color:'var(--muted)'}}>
-                  <span style={{color:'var(--danger)'}}>*</span> Champs requis
-                </p>
+                {/* Step indicator */}
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  {['Dossier','Récapitulatif','Paiement'].map((s,i) => (
+                    <div key={s} style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'center',
+                        width:22, height:22, borderRadius:'50%', fontSize:10, fontWeight:700,
+                        fontFamily:'var(--font-display)',
+                        background: i <= 1 ? 'var(--gold)' : '#F0ECE4',
+                        color: i <= 1 ? '#fff' : '#9CA3AF',
+                        border: i <= 1 ? '2px solid var(--gold)' : '2px solid #E5E1D8' }}>
+                        {i + 1}
+                      </div>
+                      {i < 2 && <div style={{ width:14, height:1, background:'#E5E1D8' }} />}
+                    </div>
+                  ))}
+                </div>
               </div>
+            </div>
+
+            {/* Card body */}
+            <div className="flex flex-col gap-7 px-4 py-6 sm:px-8 sm:py-8">
 
               <Progress pct={pct} />
 
-              <form onSubmit={handleSubmit} noValidate style={{display:'flex',flexDirection:'column',gap:26}}>
+              <form onSubmit={handleSubmit} noValidate style={{ display:'flex', flexDirection:'column', gap:24 }}>
 
                 <Section label="Informations personnelles" />
 
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:16}}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:16 }}>
                   <Field label="Nom" name="nom" value={values.nom} onChange={handle} error={errors.nom} required />
                   <Field label="Prénom" name="prenom" value={values.prenom} onChange={handle} error={errors.prenom} required />
                 </div>
@@ -657,11 +593,11 @@ export default function Form() {
 
                 <Field label="Téléphone" name="telephone" type="tel"
                   value={values.telephone} onChange={handle} error={errors.telephone} required
-                  hint="Format international accepté (+229…)" />
+                  hint="Format international accepté (+229...)" />
 
                 <Section label="Parcours académique" />
 
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:16}}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:16 }}>
                   <Field label="Niveau" name="niveau" type="select"
                     value={values.niveau} onChange={handle} error={errors.niveau} required options={NIVEAUX} />
                   <Field label="Secteur cible" name="secteur" type="select"
@@ -674,92 +610,83 @@ export default function Form() {
                 <Field label="Filière / Spécialité" name="filiere"
                   value={values.filiere} onChange={handle} error={errors.filiere} required />
 
+                {/* Binome section */}
                 {isBinome && (
                   <>
                     <Section label="Informations du binôme" />
-                    <div style={{
-                      display:'flex',alignItems:'flex-start',gap:10,
-                      background:'var(--amber-light)',border:'1px solid #FDE68A',
-                      borderRadius:12,padding:'12px 14px',
-                    }}>
+                    <div style={{ display:'flex', alignItems:'flex-start', gap:10,
+                      background:'rgba(212,160,23,0.07)', border:'1px solid rgba(212,160,23,0.22)',
+                      borderRadius:14, padding:'12px 16px' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="var(--amber)" strokeWidth="2.2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}>
+                        stroke="var(--gold-dark)" strokeWidth="2.2" strokeLinecap="round"
+                        style={{ flexShrink:0, marginTop:1 }}>
                         <circle cx="12" cy="12" r="10"/>
                         <line x1="12" y1="8" x2="12" y2="12"/>
                         <line x1="12" y1="16" x2="12.01" y2="16"/>
                       </svg>
-                      <p style={{fontSize:12,color:'#92400E',lineHeight:1.5}}>
+                      <p style={{ fontSize:12, color:'#92400E', lineHeight:1.6, fontFamily:'var(--font-body)' }}>
                         La Licence requiert une inscription en binôme. Renseignez les informations de votre partenaire.
                       </p>
                     </div>
-                   <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:16}}>
-  <Field label="Prénom du binôme" name="prenomBinome" value={values.prenomBinome} onChange={handle} error={errors.prenomBinome} required />
-  <Field label="Nom du binôme" name="nomBinome" value={values.nomBinome} onChange={handle} error={errors.nomBinome} required />
-  <Field label="Adresse e-mail binôme" name="emailBinome" type="email" value={values.emailBinome} onChange={handle} error={errors.emailBinome} required hint="Les confirmations seront envoyées à cette adresse." />
-</div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:16 }}>
+                      <Field label="Prénom du binôme" name="prenomBinome" value={values.prenomBinome}
+                        onChange={handle} error={errors.prenomBinome} required />
+                      <Field label="Nom du binôme" name="nomBinome" value={values.nomBinome}
+                        onChange={handle} error={errors.nomBinome} required />
+                      <Field label="E-mail du binôme" name="emailBinome" type="email"
+                        value={values.emailBinome} onChange={handle} error={errors.emailBinome} required
+                        hint="Les confirmations seront envoyées à cette adresse." />
+                    </div>
                   </>
                 )}
 
                 <Section label="Documents" />
 
                 {isBinome ? (
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:16}}>
-                    <FileZone
-                      label="CV étudiant 1"
-                      file={files.primary}
-                      onChange={(next) => handleFileChange('primary', next)}
-                      error={errors.filePrimary}
-                    />
-                    <FileZone
-                      label="CV étudiant 2 (binôme)"
-                      file={files.partner}
-                      onChange={(next) => handleFileChange('partner', next)}
-                      error={errors.filePartner}
-                    />
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:16 }}>
+                    <FileZone label="CV étudiant 1" file={files.primary}
+                      onChange={next => handleFile('primary', next)} error={errors.filePrimary} />
+                    <FileZone label="CV étudiant 2 (binôme)" file={files.partner}
+                      onChange={next => handleFile('partner', next)} error={errors.filePartner} />
                   </div>
                 ) : (
-                  <>
-                    <FileZone
-                      label="CV"
-                      file={files.primary}
-                      onChange={(next) => handleFileChange('primary', next)}
-                      error={errors.filePrimary}
-                    />
-                  </>
+                  <FileZone label="CV" file={files.primary}
+                    onChange={next => handleFile('primary', next)} error={errors.filePrimary} />
                 )}
 
+                {/* Error summary */}
                 {errCount > 0 && (
-                  <div style={{
-                    display:'flex',alignItems:'flex-start',gap:10,
-                    background:'var(--danger-light)',border:'1px solid #FECACA',
-                    borderRadius:12,padding:'12px 14px',
-                  }}>
+                  <div style={{ display:'flex', alignItems:'flex-start', gap:10,
+                    background:'var(--danger-bg)', border:'1px solid #FECACA',
+                    borderRadius:14, padding:'12px 16px' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                      stroke="var(--danger)" strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}>
+                      stroke="var(--danger)" strokeWidth="2.5" strokeLinecap="round"
+                      style={{ flexShrink:0, marginTop:1 }}>
                       <circle cx="12" cy="12" r="10"/>
                       <line x1="12" y1="8" x2="12" y2="12"/>
                       <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    <p style={{fontSize:12,fontWeight:500,color:'#991B1B',lineHeight:1.5}}>
-                      {errCount} erreur{errCount>1?'s':''} détectée{errCount>1?'s':''}. Veuillez corriger les champs indiqués avant de continuer.
+                    <p style={{ fontSize:12, fontWeight:500, color:'#991B1B', lineHeight:1.5, fontFamily:'var(--font-body)' }}>
+                      {errCount} erreur{errCount > 1 ? 's' : ''} détectée{errCount > 1 ? 's' : ''}. Veuillez corriger avant de continuer.
                     </p>
                   </div>
                 )}
 
-                <div style={{height:1,background:'var(--border)',margin:'4px 0'}} />
+                <div style={{ height:1, background:'var(--border)', margin:'4px 0' }} />
 
                 <button type="submit" disabled={loading} className="btn-cta">
                   {loading ? (
                     <>
-                      <svg className="spin" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                      <svg className="spin-anim" width="15" height="15" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/>
+                        <circle cx="12" cy="12" r="10" strokeOpacity=".25"/>
+                        <path d="M12 2a10 10 0 0 1 10 10"/>
                       </svg>
-                      Envoi en cours…
+                      Envoi en cours...
                     </>
                   ) : (
                     <>
-                      Continuer vers le paiement
+                      Continuer vers le récapitulatif
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                         <line x1="5" y1="12" x2="19" y2="12"/>
@@ -769,17 +696,18 @@ export default function Form() {
                   )}
                 </button>
 
-                <p style={{textAlign:'center',fontSize:11,color:'#6B7280',lineHeight:1.6}}>
+                <p style={{ textAlign:'center', fontSize:11, color:'#9CA3AF', lineHeight:1.6,
+                  fontFamily:'var(--font-body)' }}>
                   En soumettant, vous acceptez nos conditions d'utilisation.<br/>
                   Vos données sont chiffrées et confidentielles.
                 </p>
-
               </form>
             </div>
           </div>
-
         </main>
       </div>
     </>
   );
 }
+
+
