@@ -74,6 +74,8 @@ export default function Summary() {
   const hasRealProviders = methods.some((m) => !m.isFallback);
   const hasActiveMethod = methods.some((m) => m.active && !m.isFallback);
   const fullName = (s) => `${s?.prenom ?? ''} ${s?.nom ?? ''}`.trim();
+  const firstName = (s) => String(s?.prenom ?? '').trim();
+  const lastName = (s) => String(s?.nom ?? '').trim();
   const names = isPair ? `${fullName(student1)} & ${fullName(student2)}`.trim() : fullName(student1);
 
   const rows = [
@@ -114,6 +116,8 @@ export default function Summary() {
       fd.append('sector_id', String(sectorId));
       fd.append('level', String(level));
       fd.append('student_name', fullName(student1));
+      fd.append('student_firstname', firstName(student1));
+      fd.append('student_lastname', lastName(student1));
       fd.append('student_email', String(student1?.email ?? ''));
       fd.append('amount', String(AMOUNT_VALUE));
       fd.append('provider_id', String(method));
@@ -131,6 +135,8 @@ export default function Summary() {
         }
 
         fd.append('partner_name', fullName(student2));
+        fd.append('partner_firstname', firstName(student2));
+        fd.append('partner_lastname', lastName(student2));
         fd.append('partner_email', String(student2.email));
         fd.append('student_cv', f1);
         fd.append('partner_cv', f2);
@@ -156,7 +162,7 @@ export default function Summary() {
 
   return (
     <div className="px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
-      <div className="rounded-2xl border border-zinc-200 bg-gradient-to-b from-[#fdfcf8] to-[#faf8f2] px-4 py-4 sm:px-6">
+      <div className="rounded-2xl border border-zinc-200 bg-linear-to-b from-[#fdfcf8] to-[#faf8f2] px-4 py-4 sm:px-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-white">

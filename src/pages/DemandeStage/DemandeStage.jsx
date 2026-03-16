@@ -5,6 +5,7 @@ import Footer from '../../components/Footer/Footer';
 import Filters from '../../components/Filters/Filters';
 import { useApplication } from '../../context/ApplicationContext';
 import { getSectors } from '../../utils/api';
+import { matchDomain, matchStatus, normalizeSector, stripAccents } from '../../utils/sectors';
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    DESIGN TOKENS
@@ -274,8 +275,12 @@ function getAccent(sector) {
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function getStatus(sector) {
   const r = sector.remaining ?? 0;
-  if (r <= 0)   return { label: 'Complet',   dotColor: G.danger,  dotCls: '', pill: { bg: G.dangerBg, color: G.danger,  border: '#FECACA' }, barColor: G.danger,  isUrgent: false, isFull: true  };
-  if (r <= 3)   return { label: `${r} place${r > 1 ? 's' : ''}`, dotColor: G.amber, dotCls: 'urgent-ring', pill: { bg: G.amberBg, color: G.amber, border: '#FDE68A' }, barColor: G.amber, isUrgent: true, isFull: false };
+  if (sector.statusKey === 'complet' || r <= 0) {
+    return { label: 'Complet', dotColor: G.danger, dotCls: '', pill: { bg: G.dangerBg, color: G.danger, border: '#FECACA' }, barColor: G.danger, isUrgent: false, isFull: true };
+  }
+  if (sector.statusKey === 'urgent' || r <= 3) {
+    return { label: r > 0 ? `${r} place${r > 1 ? 's' : ''}` : 'Urgent', dotColor: G.amber, dotCls: 'urgent-ring', pill: { bg: G.amberBg, color: G.amber, border: '#FDE68A' }, barColor: G.amber, isUrgent: true, isFull: false };
+  }
   return        { label: 'Disponible', dotColor: '#22C55E', dotCls: '', pill: { bg: G.successBg, color: G.success, border: '#BBF7D0' }, barColor: getAccent(sector).hex, isUrgent: false, isFull: false };
 }
 
@@ -302,7 +307,7 @@ function SectorCard({ sector, level, onApply }) {
               {getSectorIcon(sector, accent.hex)}
             </div>
 
-            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 shrink-0 text-[10px] font-bold uppercase tracking-[0.10em]"
+            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 shrink-0 text-[10px] font-bold uppercase tracking-widest"
               style={{ background: status.pill.bg, color: status.pill.color, border: `1px solid ${status.pill.border}` }}>
               <span className={`w-1.5 h-1.5 rounded-full ${status.dotCls}`} style={{ background: status.dotColor }} />
               {status.label}
@@ -374,7 +379,7 @@ function SectorCard({ sector, level, onApply }) {
         </div>
 
         {/* Bottom accent line revealed on hover */}
-        <div className="absolute bottom-0 left-5 right-5 h-[2px] rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        <div className="absolute bottom-0 left-5 right-5 h-0.5 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           style={{ background: `linear-gradient(90deg, ${accent.hex}, ${accent.hex}66)` }} />
       </div>
     </article>
@@ -533,7 +538,7 @@ function SortMenu({ value, onChange }) {
   return (
     <div className="relative w-full sm:w-auto" style={{ fontFamily: 'var(--font-body)' }}>
       <button type="button" onClick={() => setOpen(p => !p)}
-        className="sort-btn w-full sm:w-[165px] flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-transparent">
+        className="sort-btn w-full sm:w-41.25 flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-transparent">
         {cur.label}
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
           className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
@@ -543,7 +548,7 @@ function SortMenu({ value, onChange }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-2 z-50 w-full sm:w-[185px] bg-white rounded-xl overflow-hidden"
+          <div className="absolute top-full left-0 mt-2 z-50 w-full sm:w-46.25 bg-white rounded-xl overflow-hidden"
             style={{ border: `1px solid ${G.border}`, boxShadow: '0 10px 26px rgba(0,0,0,0.08)' }}>
             <div className="px-4 py-2.5 border-b" style={{ borderColor: G.border }}>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Trier par</p>
@@ -570,7 +575,7 @@ function Toast({ toasts, remove }) {
     <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-50 flex flex-col gap-2 pointer-events-none">
       {toasts.map(t => (
         <div key={t.id}
-          className="a-toast pointer-events-auto flex items-center gap-3 pl-4 pr-3 py-3 rounded-2xl max-w-full sm:max-w-[310px] text-sm font-medium"
+          className="a-toast pointer-events-auto flex items-center gap-3 pl-4 pr-3 py-3 rounded-2xl max-w-full sm:max-w-77.5 text-sm font-medium"
           style={{ background: G.white, color: G.ink, border: `1px solid ${G.border}`, boxShadow: '0 10px 28px rgba(0,0,0,0.10)', fontFamily: 'var(--font-body)' }}>
           {t.icon && (
             <span className="shrink-0 w-7 h-7 rounded-lg grid place-items-center text-base"
@@ -592,31 +597,12 @@ function Toast({ toasts, remove }) {
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    UTILS
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-const stripAccents = (v = '') => v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const DEFAULT_FILTERS = { niveau: ['Licence'], statut: [], domaine: [] };
 
-const DOMAIN_KEYWORDS = {
-  tech:      ['informatique','developpement','numerique','tech','digital'],
-  finance:   ['finance','comptabilite','banque'],
-  sante:     ['sante','medical','soin'],
-  droit:     ['droit','juridique','notaire'],
-  marketing: ['marketing','communication','pub'],
-  industrie: ['industrie','ingenierie','btp','construction'],
-};
-
-function matchStatus(sector, statuses = []) {
-  if (!statuses.length) return true;
-  const r = sector.remaining ?? 0;
-  return statuses.some(s =>
-    (s === 'disponible' && r > 0) ||
-    (s === 'urgent'     && r > 0 && r <= 3) ||
-    (s === 'complet'    && r <= 0)
-  );
-}
-
-function matchDomain(sector, domains = []) {
-  if (!domains.length) return true;
-  const h = stripAccents(sector.name ?? '');
-  return domains.some(d => (DOMAIN_KEYWORDS[d] ?? []).some(k => h.includes(k)));
+function matchLevel(sector, levels = []) {
+  if (!levels.length) return true;
+  if (!Array.isArray(sector.levels) || sector.levels.length === 0) return true;
+  return levels.some((level) => sector.levels.includes(level));
 }
 
 function readJson(key, fallback) {
@@ -624,8 +610,8 @@ function readJson(key, fallback) {
   catch { return fallback; }
 }
 
-const UI_KEY   = 'find:demande-stage:ui:v1';
-const DATA_KEY = 'find:demande-stage:data:v1';
+const UI_KEY   = 'find:demande-stage:ui:v2';
+const DATA_KEY = 'find:demande-stage:data:v2';
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MAIN PAGE
@@ -639,7 +625,7 @@ export default function DemandeStage() {
 
   const [level,    setLevel]    = useState(pUi?.level ?? 'Licence');
   const [data,     setData]     = useState(Array.isArray(pData) ? pData : []);
-  const [filters,  setFilters]  = useState(pUi?.filters ?? { niveau: ['Licence'], statut: [], domaine: [] });
+  const [filters,  setFilters]  = useState(pUi?.filters ?? DEFAULT_FILTERS);
   const [search,   setSearch]   = useState(pUi?.search ?? '');
   const [sortBy,   setSortBy]   = useState(pUi?.sortBy ?? 'default');
   const [loading,  setLoading]  = useState(true);
@@ -690,14 +676,7 @@ export default function DemandeStage() {
       const response = await getSectors();
       const sectors  = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : [];
       if (cancelled) return;
-      const mapped = sectors.map(item => ({
-        id: item.id ?? item._id ?? null,
-        name: item.name,
-        description: item.description,
-        domain: item.name,
-        remaining: item.available_slots ?? 0,
-        total: item.total_slots ?? 0,
-      }));
+      const mapped = sectors.map(normalizeSector);
       setData(mapped);
       try { localStorage.setItem(DATA_KEY, JSON.stringify(mapped)); } catch {}
     })().catch(err => {
@@ -709,8 +688,25 @@ export default function DemandeStage() {
     return () => { cancelled = true; };
   }, []);
 
+  const selectedLevels = filters?.niveau?.length ? filters.niveau : (level ? [level] : []);
+  const domainOptions = [...new Map(
+    data
+      .filter((sector) => sector?.domainKey && sector?.domainLabel)
+      .map((sector) => [
+        sector.domainKey,
+        {
+          value: sector.domainKey,
+          label: sector.domainLabel,
+        },
+      ])
+  ).values()]
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  const totalCount = data.filter((sector) => matchLevel(sector, selectedLevels)).length;
+
   const sectors = data
     .filter(s => !search || stripAccents(s.name ?? '').includes(stripAccents(search)) || stripAccents(s.description ?? '').includes(stripAccents(search)))
+    .filter(s => matchLevel(s, selectedLevels))
     .filter(s => matchStatus(s, filters.statut))
     .filter(s => matchDomain(s, filters.domaine))
     .sort((a, b) => {
@@ -726,7 +722,7 @@ export default function DemandeStage() {
       <div className="ds-root">
         <Navbar />
 
-        <main className="flex-1 pt-[72px] md:pt-[80px]">
+        <main className="flex-1 pt-18 md:pt-20">
 
           {/* â•â• HERO â•â• */}
           <div className="border-b pt-12 sm:pt-16 pb-10 sm:pb-12 px-4 sm:px-6"
@@ -755,7 +751,7 @@ export default function DemandeStage() {
                   Choisissez votre{' '}
                   <em className="gold-shimmer not-italic font-semibold">secteur de stage</em>
                 </h1>
-                <p className="text-sm sm:text-base text-gray-500 max-w-[400px] mx-auto leading-relaxed">
+                <p className="text-sm sm:text-base text-gray-500 max-w-100 mx-auto leading-relaxed">
                   Stage académique 2026 — sélectionnez un secteur et déposez votre candidature.
                 </p>
                 <div className="flex justify-center mt-4">
@@ -785,17 +781,19 @@ export default function DemandeStage() {
             {!loading && <StatsBar sectors={data} />}
 
             {/* Control bar */}
-            <div className="ctrl-bar au5 sticky top-[76px] md:top-[86px] z-30 mb-8
+            <div className="ctrl-bar au5 sticky top-19 md:top-21.5 z-30 mb-8
                             flex flex-col sm:flex-row gap-3 items-stretch sm:items-center
                             rounded-2xl border px-4 sm:px-5 py-3.5"
               style={{ borderColor: G.border, boxShadow: '0 2px 14px rgba(0,0,0,0.05)' }}>
               <div className="flex-1 min-w-0">
                 <Filters
                   level={level}
+                  filters={filters}
+                  domainOptions={domainOptions}
                   onLevelChange={handleLevel}
                   onFiltersChange={handleFiltersChange}
                   resultCount={sectors.length}
-                  totalCount={data.length}
+                  totalCount={totalCount}
                 />
               </div>
               <div className="hidden sm:block self-stretch w-px my-1" style={{ background: G.border }} />
@@ -823,9 +821,9 @@ export default function DemandeStage() {
             {/* Skeletons */}
             {loading && (
               <div>
-                <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+                <div className="grid gap-5 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="skel h-[240px]" style={{ animationDelay: `${i * 0.07}s` }} />
+                    <div key={i} className="skel h-60" style={{ animationDelay: `${i * 0.07}s` }} />
                   ))}
                 </div>
                 <div className="flex items-center justify-center gap-2.5 mt-8 text-gray-400 text-sm">
@@ -838,7 +836,7 @@ export default function DemandeStage() {
 
             {/* Cards grid */}
             {!loading && sectors.length > 0 && (
-              <div className={`grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))] transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}>
+              <div className={`grid gap-5 grid-cols-[repeat(auto-fill,minmax(240px,1fr))] transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}>
                 {sectors.map((sector, i) => (
                   <div key={sector.id ?? i} className="a-card" style={{ animationDelay: `${i * 0.05}s` }}>
                     <SectorCard sector={sector} level={level} onApply={handleApply} />
@@ -858,7 +856,7 @@ export default function DemandeStage() {
                 <h3 className="text-lg font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: G.ink, fontSize: '1.4rem' }}>
                   {search ? 'Aucun résultat' : 'Aucune place disponible'}
                 </h3>
-                <p className="text-gray-400 text-sm max-w-[260px] leading-relaxed mb-6">
+                <p className="text-gray-400 text-sm max-w-65 leading-relaxed mb-6">
                   {search ? `Aucun secteur ne correspond à "${search}".` : 'Tous les quotas sont remplis. Revenez bientôt.'}
                 </p>
                 {search && (

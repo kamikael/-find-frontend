@@ -2,13 +2,13 @@
 // Client API Laravel: /api/v1/...
 
 const PRIMARY_API_BASE = (
-  import.meta?.env?.VITE_API_BASE_URL || "http://127.0.0.1:18000/api"
+  import.meta?.env?.VITE_API_BASE_URL || "http://127.0.0.1:8000/api"
 ).replace(/\/$/, "");
 
 const API_BASE_CANDIDATES = [
   PRIMARY_API_BASE,
-  "http://127.0.0.1:18000/api",
-  "http://localhost:18000/api",
+  "http://127.0.0.1:8000/api",
+  "http://localhost:8000/api",
 ].filter((base, index, arr) => arr.indexOf(base) === index);
 
 // 🔥 HTTP intelligent (JSON OU multipart)

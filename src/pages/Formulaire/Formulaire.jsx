@@ -2,6 +2,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useApplication } from '../../context/ApplicationContext';
 import Navbar from '../../components/Navbar/Navbar';
+import { getSectors } from '../../utils/api';
+import { normalizeSector } from '../../utils/sectors';
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    STYLES â€” Gold / Black / Ivory system
@@ -221,7 +223,7 @@ const STYLES = `
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    FIELD COMPONENT
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-function Field({ label, name, type='text', value, onChange, error, required, hint, options, rows }) {
+function Field({ label, name, type='text', value, onChange, error, required, hint, options, rows, readOnly=false, disabled=false }) {
   const isSel = type === 'select';
   const isTxt = type === 'textarea';
   const hasVal = String(value ?? '').length > 0;
@@ -241,7 +243,11 @@ function Field({ label, name, type='text', value, onChange, error, required, hin
     return () => { document.removeEventListener('mousedown', onOut); document.removeEventListener('keydown', onEsc); };
   }, [open]);
 
-  const commitSelect = v => { onChange?.({ target: { name, value: v } }); setOpen(false); };
+  const commitSelect = v => {
+    if (disabled) return;
+    onChange?.({ target: { name, value: v } });
+    setOpen(false);
+  };
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
@@ -251,7 +257,7 @@ function Field({ label, name, type='text', value, onChange, error, required, hin
             <div ref={selRef} className={`sel ${open ? 'open' : ''}`}>
               <input type="hidden" name={name} value={value ?? ''} />
               <button type="button" className={`sel-btn ${cls}`}
-                onClick={() => setOpen(v => !v)} aria-haspopup="listbox" aria-expanded={open}>
+                onClick={() => !disabled && setOpen(v => !v)} aria-haspopup="listbox" aria-expanded={open} disabled={disabled}>
                 <span className={`sel-value ${selectedOption ? '' : 'ph'}`}>
                   {selectedOption?.label ?? 'Sélectionner'}
                 </span>
@@ -280,7 +286,7 @@ function Field({ label, name, type='text', value, onChange, error, required, hin
         {isTxt && (
           <>
             <textarea name={name} value={value} onChange={onChange} required={required}
-              rows={rows ?? 4} placeholder=" " className={`fl-in ${cls}`} />
+              rows={rows ?? 4} placeholder=" " className={`fl-in ${cls}`} readOnly={readOnly} disabled={disabled} />
             <label className="fl-lb">
               {label}{required && <span style={{color:'var(--danger)',marginLeft:2}}>*</span>}
             </label>
@@ -289,7 +295,7 @@ function Field({ label, name, type='text', value, onChange, error, required, hin
         {!isSel && !isTxt && (
           <>
             <input type={type} name={name} value={value} onChange={onChange}
-              required={required} placeholder=" " className={`fl-in ${cls}`} />
+              required={required} placeholder=" " className={`fl-in ${cls}`} readOnly={readOnly} disabled={disabled} />
             <label className="fl-lb">
               {label}{required && <span style={{color:'var(--danger)',marginLeft:2}}>*</span>}
             </label>
@@ -424,6 +430,10 @@ export default function Form() {
   const navigate = useNavigate();
   const { sector, level, setSectorAndModality, student1, student2,
     setStudent1, setStudent2, setCvFile, setCvValid } = useApplication();
+  const currentSector = sector ? normalizeSector(sector) : null;
+  const [availableSectors, setAvailableSectors] = useState(currentSector ? [currentSector] : []);
+  const [loadingSectors, setLoadingSectors] = useState(false);
+  const [sectorsError, setSectorsError] = useState('');
 
   const [values, setValues] = useState({
     nom:           student1?.nom ?? '',
@@ -431,7 +441,8 @@ export default function Form() {
     email:         student1?.email ?? '',
     telephone:     student1?.telephone ?? '',
     niveau:        level ?? '',
-    secteur:       sector?.name ?? '',
+    secteur:       currentSector?.id ?? currentSector?._id ?? currentSector?.name ?? '',
+    domaine:       currentSector?.domainLabel ?? '',
     universite:    student1?.universite ?? '',
     filiere:       student1?.filiere ?? '',
     nomBinome:     student2?.nom ?? '',
@@ -451,8 +462,85 @@ export default function Form() {
   const curFiles = [files.primary, files.partner].filter(Boolean).length;
   const pct = Math.round(((filled + Math.min(curFiles, reqFiles)) / (req.length + reqFiles)) * 100);
 
+  const catalog = [...new Map(
+    [currentSector, ...availableSectors]
+      .filter(Boolean)
+      .map((item) => {
+        const normalized = normalizeSector(item);
+        const key = normalized.id ?? normalized._id ?? normalized.name;
+        return [String(key), normalized];
+      })
+  ).values()];
+
+  const findSector = (value) => catalog.find((item) => (
+    String(item.id ?? item._id ?? '') === String(value)
+      || String(item.name ?? '') === String(value)
+  ));
+
+  useEffect(() => {
+    setValues((prev) => {
+      const nextSector = currentSector?.id ?? currentSector?._id ?? currentSector?.name ?? '';
+      const nextDomain = currentSector?.domainLabel ?? '';
+
+      if (!nextSector || (prev.secteur === nextSector && prev.domaine === nextDomain && prev.niveau === (level ?? prev.niveau))) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        niveau: level ?? prev.niveau,
+        secteur: nextSector,
+        domaine: nextDomain,
+      };
+    });
+  }, [currentSector, level]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setLoadingSectors(true);
+      setSectorsError('');
+
+      try {
+        const response = await getSectors();
+        const list = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : [];
+        if (cancelled) return;
+        setAvailableSectors(list.map(normalizeSector));
+      } catch (error) {
+        if (cancelled) return;
+        setSectorsError(error?.message || 'Impossible de charger les secteurs.');
+      } finally {
+        if (!cancelled) setLoadingSectors(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handle = e => {
     const { name, value } = e.target;
+    if (name === 'secteur') {
+      const nextSector = findSector(value);
+      const nextValue = nextSector ? String(nextSector.id ?? nextSector._id ?? nextSector.name) : value;
+
+      setValues((prev) => ({
+        ...prev,
+        secteur: nextValue,
+        domaine: nextSector?.domainLabel ?? '',
+      }));
+
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.secteur;
+        delete next.domaine;
+        return next;
+      });
+      return;
+    }
+
     setValues(p => ({ ...p, [name]: value }));
     if (errors[name]) setErrors(p => { const n = {...p}; delete n[name]; return n; });
   };
@@ -469,7 +557,8 @@ export default function Form() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) e.email = 'E-mail invalide.';
     if (!/^[\d\s+\-()]{7,}$/.test(values.telephone)) e.telephone = 'Numéro invalide.';
     if (!values.niveau)             e.niveau     = 'Sélectionnez votre niveau.';
-    if (!values.secteur)            e.secteur    = 'Sélectionnez un secteur.';
+    if (!values.secteur || !findSector(values.secteur)) e.secteur = 'Sélectionnez un secteur disponible.';
+    if (!values.domaine.trim())     e.domaine    = 'Le domaine sera défini à partir du secteur.';
     if (!values.universite.trim())  e.universite = 'Université requise.';
     if (!values.filiere.trim())     e.filiere    = 'Filière requise.';
     if (isBinome) {
@@ -488,7 +577,8 @@ export default function Form() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     await new Promise(r => setTimeout(r, 1400));
-    if (sector && values.niveau) setSectorAndModality(sector, values.niveau);
+    const nextSector = findSector(values.secteur) ?? currentSector;
+    if (nextSector && values.niveau) setSectorAndModality(nextSector, values.niveau);
     setStudent1({ nom: values.nom.trim(), prenom: values.prenom.trim(), email: values.email.trim(),
       telephone: values.telephone.trim(), universite: values.universite.trim(),
       filiere: values.filiere.trim(), niveau: values.niveau });
@@ -503,12 +593,10 @@ export default function Form() {
   };
 
   const NIVEAUX  = ['Licence','Master'];
-  const SECTEURS = [
-    'Informatique & Développement','Finance & Comptabilité','Santé & Médical',
-    'Droit & Juridique','Marketing & Communication','Industrie & BTP',
-    'Commerce & Vente','Ressources Humaines',
-    ...(sector ? [sector.name] : []),
-  ].filter((v,i,a) => a.indexOf(v) === i);
+  const SECTEURS = catalog.map((item) => ({
+    value: String(item.id ?? item._id ?? item.name),
+    label: item.name,
+  }));
 
   const errCount = Object.keys(errors).length;
 
@@ -535,7 +623,7 @@ export default function Form() {
           <div className="fu fu1 mx-auto w-full max-w-2xl overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.06)]">
 
             {/* Card header band */}
-            <div className="border-b border-zinc-200 bg-gradient-to-b from-[#fdfcf8] to-[#faf8f2] px-4 py-5 sm:px-8">
+            <div className="border-b border-zinc-200 bg-linear-to-b from-[#fdfcf8] to-[#faf8f2] px-4 py-5 sm:px-8">
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, flexWrap:'wrap' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:14 }}>
                   <div style={{ width:38, height:38, borderRadius:12, background:'var(--ink)',
@@ -603,6 +691,11 @@ export default function Form() {
                   <Field label="Secteur cible" name="secteur" type="select"
                     value={values.secteur} onChange={handle} error={errors.secteur} required options={SECTEURS} />
                 </div>
+
+                <Field label="Domaine" name="domaine"
+                  value={values.domaine} onChange={handle} error={errors.domaine}
+                  readOnly
+                  hint={loadingSectors ? 'Chargement des secteurs et domaines depuis le backend...' : sectorsError || 'Renseigné automatiquement selon le secteur choisi.'} />
 
                 <Field label="Université / École" name="universite"
                   value={values.universite} onChange={handle} error={errors.universite} required />
@@ -709,5 +802,3 @@ export default function Form() {
     </>
   );
 }
-
-

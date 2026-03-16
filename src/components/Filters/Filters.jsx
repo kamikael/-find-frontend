@@ -87,47 +87,12 @@ const STYLES = `
   }
   .flt-btn:active { transform: scale(0.97); }
 
-  /* ── Gold accent badge ── */
-  .flt-badge {
-    min-width: 17px;
-    height: 17px;
-    border-radius: 6px;
-    padding: 0 5px;
-    font-family: var(--mono);
-    font-size: 9px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--gold);
-    color: var(--ink);
-    letter-spacing: 0;
-  }
-
   /* ── Divider ── */
   .flt-sep {
     width: 1px;
     background: var(--border);
     align-self: stretch;
   }
-
-  /* ── Clear btn ── */
-  .clr-btn {
-    font-family: var(--font);
-    font-size: 10.5px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: color 0.18s ease;
-  }
-  .clr-btn:hover { color: var(--ink); }
 
   /* ── Result count ── */
   .res-count {
@@ -249,6 +214,26 @@ const FILTER_GROUPS = [
   },
 ];
 
+const DEFAULT_FILTERS = {
+  niveau: [],
+  statut: [],
+  domaine: [],
+};
+
+function normalizeDomainOptions(domainOptions = []) {
+  if (!Array.isArray(domainOptions) || domainOptions.length === 0) {
+    return FILTER_GROUPS.find((group) => group.key === 'domaine')?.options ?? [];
+  }
+
+  return domainOptions
+    .filter((option) => option?.value && option?.label)
+    .map((option) => ({
+      value: option.value,
+      label: option.label,
+      sub: option.sub,
+    }));
+}
+
 function DropdownPanel({ group, selected, onToggle, onClose }) {
   return (
     <div className="drop-panel">
@@ -264,7 +249,7 @@ function DropdownPanel({ group, selected, onToggle, onClose }) {
           return (
             <button key={opt.value} type="button"
               className={`drop-item ${isSel ? 'is-sel' : ''}`}
-              onClick={() => { onToggle(opt.value); if (group.single) onClose(); }}>
+              onClick={() => { onToggle(opt.value); onClose(); }}>
               <span className="ditem-left">
                 <span className="ditem-check">
                   {isSel && (
@@ -284,13 +269,26 @@ function DropdownPanel({ group, selected, onToggle, onClose }) {
   );
 }
 
-export default function Filters({ level, onLevelChange, resultCount, totalCount, onFiltersChange }) {
+export default function Filters({
+  level,
+  filters,
+  domainOptions,
+  onLevelChange,
+  resultCount,
+  totalCount,
+  onFiltersChange,
+}) {
   const [activeFilters, setActiveFilters] = useState({
-    niveau: level ? [level] : [],
-    statut: [],
-    domaine: [],
+    ...DEFAULT_FILTERS,
+    ...(filters ?? {}),
+    niveau: filters?.niveau?.length ? filters.niveau : (level ? [level] : []),
   });
   const [openGroup, setOpenGroup] = useState(null);
+  const availableGroups = FILTER_GROUPS.map((group) => (
+    group.key === 'domaine'
+      ? { ...group, options: normalizeDomainOptions(domainOptions) }
+      : group
+  ));
 
   useEffect(() => {
     setActiveFilters(prev => {
@@ -300,43 +298,51 @@ export default function Filters({ level, onLevelChange, resultCount, totalCount,
     });
   }, [level]);
 
-  const syncLevel = useCallback((val) => {
+  useEffect(() => {
+    if (!filters) return;
     setActiveFilters(prev => {
-      const next = { ...prev, niveau: [val] };
-      onFiltersChange?.(next);
-      return next;
+      const next = {
+        ...DEFAULT_FILTERS,
+        ...filters,
+        niveau: filters?.niveau?.length ? filters.niveau : (level ? [level] : []),
+      };
+
+      const unchanged = ['niveau', 'statut', 'domaine']
+        .every((key) => JSON.stringify(prev[key] ?? []) === JSON.stringify(next[key] ?? []));
+
+      return unchanged ? prev : next;
     });
+  }, [filters, level]);
+
+  const syncLevel = useCallback((val) => {
+    let nextFilters = null;
+    setActiveFilters(prev => {
+      nextFilters = { ...prev, niveau: [val] };
+      return nextFilters;
+    });
+    if (nextFilters) onFiltersChange?.(nextFilters);
     onLevelChange?.(val);
   }, [onLevelChange, onFiltersChange]);
 
   const toggleFilter = (groupKey, value) => {
-    const group = FILTER_GROUPS.find(g => g.key === groupKey);
+    const group = availableGroups.find(g => g.key === groupKey);
+    let nextFilters = null;
     setActiveFilters(prev => {
-      let next;
       if (group.single) {
-        next = { ...prev, [groupKey]: [value] };
-        if (groupKey === 'niveau') onLevelChange?.(value);
-      } else {
-        const cur = prev[groupKey];
-        next = { ...prev, [groupKey]: cur.includes(value) ? cur.filter(v => v !== value) : [...cur, value] };
+        nextFilters = { ...prev, [groupKey]: [value] };
+        return nextFilters;
       }
-      onFiltersChange?.(next);
-      return next;
+
+      const cur = prev[groupKey];
+      nextFilters = { ...prev, [groupKey]: cur.includes(value) ? cur.filter(v => v !== value) : [...cur, value] };
+      return nextFilters;
     });
+
+    if (nextFilters) onFiltersChange?.(nextFilters);
+    if (group?.single && groupKey === 'niveau') onLevelChange?.(value);
   };
 
-  const clearAll = () => {
-    const reset = { niveau: [], statut: [], domaine: [] };
-    setActiveFilters(reset);
-    onFiltersChange?.(reset);
-    setOpenGroup(null);
-  };
-
-  const totalActive = (activeFilters.niveau?.length ?? 0)
-    + (activeFilters.statut?.length ?? 0)
-    + (activeFilters.domaine?.length ?? 0);
-
-  const niveauGroup = FILTER_GROUPS.find(g => g.key === 'niveau');
+  const niveauGroup = availableGroups.find(g => g.key === 'niveau');
 
   return (
     <>
@@ -363,10 +369,9 @@ export default function Filters({ level, onLevelChange, resultCount, totalCount,
           <div className="flt-sep hidden sm:block" style={{ height: 30 }} />
 
           {/* Dropdowns */}
-          {FILTER_GROUPS.filter(g => g.key !== 'niveau').map(group => {
-            const count = (activeFilters[group.key] ?? []).length;
+          {availableGroups.filter(g => g.key !== 'niveau').map(group => {
             const isOpen = openGroup === group.key;
-            const isActive = count > 0;
+            const isActive = (activeFilters[group.key] ?? []).length > 0;
 
             return (
               <div key={group.key} className="relative w-full sm:w-auto">
@@ -374,7 +379,6 @@ export default function Filters({ level, onLevelChange, resultCount, totalCount,
                   className={`flt-btn w-full sm:w-auto ${isActive ? 'flt-btn--active' : ''}`}
                   onClick={() => setOpenGroup(isOpen ? null : group.key)}>
                   {group.label}
-                  {count > 0 && <span className="flt-badge">{count}</span>}
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
                     strokeLinecap="round"
                     style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease', opacity: 0.6 }}>
@@ -410,15 +414,6 @@ export default function Filters({ level, onLevelChange, resultCount, totalCount,
             </>
           )}
 
-          {/* Clear all */}
-          {totalActive > 0 && (
-            <button type="button" onClick={clearAll} className="clr-btn sm:ml-auto">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-              Tout effacer
-            </button>
-          )}
         </div>
       </div>
     </>
