@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useEffect } from 'react';
+﻿import { useState, useCallback, useEffect, useRef } from 'react';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
@@ -284,6 +284,7 @@ export default function Filters({
     niveau: filters?.niveau?.length ? filters.niveau : (level ? [level] : []),
   });
   const [openGroup, setOpenGroup] = useState(null);
+  const shouldNotifyParentRef = useRef(false);
   const availableGroups = FILTER_GROUPS.map((group) => (
     group.key === 'domaine'
       ? { ...group, options: normalizeDomainOptions(domainOptions) }
@@ -314,31 +315,29 @@ export default function Filters({
     });
   }, [filters, level]);
 
+  useEffect(() => {
+    if (!shouldNotifyParentRef.current) return;
+    shouldNotifyParentRef.current = false;
+    onFiltersChange?.(activeFilters);
+  }, [activeFilters, onFiltersChange]);
+
   const syncLevel = useCallback((val) => {
-    let nextFilters = null;
-    setActiveFilters(prev => {
-      nextFilters = { ...prev, niveau: [val] };
-      return nextFilters;
-    });
-    if (nextFilters) onFiltersChange?.(nextFilters);
+    shouldNotifyParentRef.current = true;
+    setActiveFilters(prev => ({ ...prev, niveau: [val] }));
     onLevelChange?.(val);
-  }, [onLevelChange, onFiltersChange]);
+  }, [onLevelChange]);
 
   const toggleFilter = (groupKey, value) => {
     const group = availableGroups.find(g => g.key === groupKey);
-    let nextFilters = null;
+    shouldNotifyParentRef.current = true;
     setActiveFilters(prev => {
       if (group.single) {
-        nextFilters = { ...prev, [groupKey]: [value] };
-        return nextFilters;
+        return { ...prev, [groupKey]: [value] };
       }
 
       const cur = prev[groupKey];
-      nextFilters = { ...prev, [groupKey]: cur.includes(value) ? cur.filter(v => v !== value) : [...cur, value] };
-      return nextFilters;
+      return { ...prev, [groupKey]: cur.includes(value) ? cur.filter(v => v !== value) : [...cur, value] };
     });
-
-    if (nextFilters) onFiltersChange?.(nextFilters);
     if (group?.single && groupKey === 'niveau') onLevelChange?.(value);
   };
 
