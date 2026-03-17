@@ -1,9 +1,20 @@
 // src/services/api.js
 // Client API Laravel: /api/v1/...
 
-const PRIMARY_API_BASE = (
-  import.meta?.env?.VITE_API_BASE_URL || "http://127.0.0.1:8000/api"
-).replace(/\/$/, "");
+function resolvePrimaryApiBase() {
+  const rawFromEnv = String(import.meta.env.VITE_API_BASE_URL ?? "")
+    .trim()
+    .replace(/^['"]|['"]$/g, "");
+
+  return (rawFromEnv || "http://127.0.0.1:8000/api").replace(/\/$/, "");
+}
+
+export const PRIMARY_API_BASE = resolvePrimaryApiBase();
+
+if (import.meta.env.DEV) {
+  console.info("[api] VITE_API_BASE_URL =", import.meta.env.VITE_API_BASE_URL);
+  console.info("[api] PRIMARY_API_BASE =", PRIMARY_API_BASE);
+}
 
 const API_BASE_CANDIDATES = [
   PRIMARY_API_BASE,
